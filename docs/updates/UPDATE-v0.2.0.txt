@@ -1,0 +1,17 @@
+bpsc-cmo v0.2.0 update for the v0.1.0 Full Starter.
+
+Back up the project and database. Extract into the existing project root.
+Keep your .env and installed dependencies. Then run:
+
+php artisan optimize:clear
+php artisan migrate
+
+Open Dashboard > Evaluation System.
+See docs/v0.2.0-modules-surveys.md for role permissions, workflow and migration details.
+
+Obsolete files (no routes/actions reference these; optionally remove):
+public/build/assets/app-DSdad6Q5.js
+public/build/assets/app-yHBtb90o.css
+resources/views/directory/index.blade.php
+resources/views/directory/show.blade.php
+resources/views/layouts/public.blade.php

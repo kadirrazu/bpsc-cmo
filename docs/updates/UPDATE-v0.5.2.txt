@@ -1,0 +1,9 @@
+bpsc-cmo v0.5.2 update for v0.5.1.
+Extract into the existing project root; retain .env and dependencies.
+
+Run:
+php artisan optimize:clear
+
+No new migration required. Compiled assets included.
+See docs/v0.5.2-question-transfer-drag-drop.md.
+The fixed readme.md is unchanged.

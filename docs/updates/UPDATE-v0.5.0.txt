@@ -1,0 +1,11 @@
+bpsc-cmo v0.5.0 update for v0.4.0.
+
+Back up the project and extract into the existing project root.
+Keep .env and dependencies. Updated compiled frontend assets are included.
+
+Run:
+php artisan optimize:clear
+
+No new migration is required.
+See docs/v0.5.0-survey-specific-question-order.md.
+The fixed readme.md is unchanged.

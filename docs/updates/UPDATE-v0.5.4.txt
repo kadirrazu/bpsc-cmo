@@ -1,0 +1,9 @@
+bpsc-cmo v0.5.4 update for v0.5.3.
+
+Extract into the existing project root; retain .env and dependencies.
+Run:
+php artisan optimize:clear
+
+No new migration or frontend build required.
+See docs/v0.5.4-expert-profile-report-permissions.md.
+The fixed root readme.md is unchanged.

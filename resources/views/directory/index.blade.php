@@ -1,0 +1,6 @@
+@extends('layouts.public')
+@section('content')
+<div class="expert-hero"><span class="eyebrow">CHAIRMAN OFFICE · BPSC</span><h1>Expert Directory</h1><p class="mb-0">Explore published profiles from the Expert and Departmental Expert pools.</p></div>
+@include('shared.expert-search')
+<div class="row g-3">@forelse($experts as $expert)<div class="col-md-6 col-lg-4"><article class="card expert-card"><div class="card-body"><span class="badge bg-teal-lt mb-3">{{ $expert->type==='departmental'?'Departmental Expert':'Expert' }}</span><h2><a href="{{ route('directory.show',$expert) }}">{{ $expert->name }}</a></h2><p class="text-secondary mb-2">{{ $expert->designation }}@if($expert->designation && $expert->organization)<br>@endif{{ $expert->organization }}</p><p class="mb-0">{{ $expert->specialization ?: 'Specialization not provided' }}</p></div><div class="card-footer"><a href="{{ route('directory.show',$expert) }}">View profile <i class="bi bi-arrow-right"></i></a></div></article></div>@empty<div class="col-12"><div class="card card-body text-center py-5"><h2>No published experts found</h2><p class="text-secondary mb-0">Try another search or check again later.</p></div></div>@endforelse</div><div class="mt-4">{{ $experts->links() }}</div>
+@endsection

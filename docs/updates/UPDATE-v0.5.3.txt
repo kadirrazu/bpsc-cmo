@@ -1,0 +1,13 @@
+bpsc-cmo v0.5.3 update for v0.5.2.
+
+Extract into the existing project root; retain .env and dependencies.
+Updated compiled frontend assets are included.
+
+Run once to organize older root update instructions, then clear caches:
+php artisan cmo:organize-update-notes
+php artisan optimize:clear
+
+No new migration required.
+See docs/v0.5.3-question-button-visibility-fix.md.
+All update instructions are now kept in docs/updates/.
+The fixed root readme.md is unchanged.

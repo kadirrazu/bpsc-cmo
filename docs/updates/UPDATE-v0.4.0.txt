@@ -1,0 +1,11 @@
+bpsc-cmo v0.4.0 update for v0.3.0.
+
+Back up the project/database and extract into the existing project root.
+Keep your .env and dependencies. Updated compiled assets are included.
+
+Run:
+php artisan optimize:clear
+php artisan migrate
+
+See docs/v0.4.0-attendance-experience-member-day-limit.md.
+The fixed readme.md is unchanged.

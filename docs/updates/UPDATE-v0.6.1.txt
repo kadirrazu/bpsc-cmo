@@ -1,0 +1,11 @@
+bpsc-cmo v0.6.1 update for v0.6.0.
+
+Extract into the existing project root; retain .env and dependencies.
+Updated compiled frontend assets are included.
+
+Run:
+php artisan optimize:clear
+
+No new migration required.
+See docs/v0.6.1-report-filter-alignment-numeric-pagination.md.
+The fixed root readme.md is unchanged.

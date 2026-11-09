@@ -1,0 +1,11 @@
+bpsc-cmo v0.3.0 update for v0.2.0.
+
+Back up project/database, then extract into the existing project root.
+Keep your .env and dependencies. Updated compiled assets are included.
+
+Run:
+php artisan optimize:clear
+php artisan migrate
+
+See docs/v0.3.0-question-bank-expert-reports.md for changes and verification.
+The fixed readme.md is unchanged.

@@ -1,0 +1,3 @@
+@extends('layouts.public')
+@section('title',$expert->name)
+@section('content')<a href="{{ route('home') }}" class="btn btn-outline-secondary mb-3">Back to directory</a><article class="card"><div class="card-body p-md-5"><span class="badge bg-teal-lt mb-3">{{ $expert->type==='departmental'?'Departmental Expert':'Expert' }}</span><h1>{{ $expert->name }}</h1><p class="fs-3 text-secondary">{{ $expert->designation }}@if($expert->designation && $expert->organization) · @endif{{ $expert->organization }}</p><h2 class="mt-4">Specialization</h2><p>{{ $expert->specialization ?: 'Not provided' }}</p>@if($expert->biography)<h2 class="mt-4">Biography</h2><p class="text-prewrap mb-0">{{ $expert->biography }}</p>@endif</div></article>@endsection
