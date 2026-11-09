@@ -1,0 +1,42 @@
+BPSC CMO v0.7.1 - Report Downloads, Statistics and Aligned Actions
+
+Changes
+- Excel Import/Export and Add/Create actions share one row with consistent gaps
+  on Users, Units, Designations, Expert Pool, Question Bank and Surveys pages.
+- Expert Reports supports searchable multi-expert selection, Remove/Clear, and
+  Download Excel / Download PDF. Choose selected experts or all filtered experts.
+- Downloads contain profile details, question summaries, separate rating scales,
+  distributions, submissions, answer snapshots/hints and survey activity.
+- Workbook sheets: Overview, Experts, Question Summary, Submissions, Answers,
+  Survey Activity. Numbers/averages are numeric; text is written as literal text.
+- PDF uses A4 pages with separate expert sections, repeating BPSC header and
+  page-number footer, Bengali font support and flowing long narrative answers.
+- Cards show current total/active surveys plus filtered unique evaluated experts,
+  participants, submissions and surveys with responses. Draft/closed counts are
+  shown with the workspace survey totals.
+- Administrator-only Survey Activity table includes zero-response surveys and
+  paginates 10 per page. Status is current; response counts follow report filters.
+- Downloads/exports, including legacy report CSV, are Administrator-only.
+  Chairman retains report/profile history/answer viewing; Member/Staff cannot
+  access report pages or downloads. Export actions are audited.
+
+Apply
+1. Extract into the project root and replace matching files.
+2. Run: php artisan optimize:clear
+No new database migration or dependency installation is required for this update.
+Built frontend files are included. v0.7.0 database migrations must already be applied
+when using the separate Excel Import & Export feature.
+
+Report usage and counting definitions: docs/expert-reports.md.
+Fixed README remains unchanged.
+
+Validation
+- Full PHP suite: 130 tests passed, 1,300 assertions.
+- JavaScript DOM checks: 7 passed, including the integrated searchable selection.
+- Excel reopened to verify worksheets, row counts, numeric means, Bengali text,
+  formula-safe literal cells, selected/filter scope and removed expert history.
+- Normal and long-answer PDFs rendered and visually checked; repeated headers,
+  footers, page numbers and narrative start/end markers verified.
+- Frontend production build; route/view cache compilation.
+- PHP/SQLite and PDF/DOM tests ran on Linux; Windows/MySQL browser testing was
+  not available in this environment.

@@ -1,0 +1,11 @@
+import './viva-display.js';
+const role=document.querySelector('select#role'), details=document.querySelector('[data-member-details]');
+if(role&&details){const update=()=>{const enabled=['member','chairman'].includes(role.value);details.hidden=!enabled;details.querySelectorAll('input').forEach(i=>i.disabled=!enabled);};role.addEventListener('change',update);update();}
+document.querySelectorAll('[data-viva-pool]').forEach(form=>{
+ const selection=form.querySelector('[data-pool-selection]'),search=form.querySelector('[data-pool-search]'),rows=[...form.querySelectorAll('[data-pool-member]')];
+ const update=()=>{const specific=selection.value==='selected';rows.forEach(row=>{row.hidden=!(row.dataset.search||'').includes(search.value.trim().toLocaleLowerCase());row.querySelector('input').disabled=!specific;});form.querySelector('[data-pool-count]').textContent=specific?`${rows.filter(r=>r.querySelector('input').checked).length} selected · ${rows.length} eligible users`:`${selection.selectedOptions[0].textContent} will be included when saved.`;};
+ selection.addEventListener('change',update);search.addEventListener('input',update);form.addEventListener('change',update);update();
+});
+document.querySelectorAll('[data-viva-distribution]').forEach(form=>{
+ const update=()=>{const random=form.querySelector('input[name="mode"]:checked').value==='random',selected=[...form.querySelectorAll('[data-board-choice]:checked')].map(i=>i.value);form.querySelectorAll('[data-board-mapping]').forEach(i=>{i.disabled=random||!selected.includes(i.dataset.boardMapping);i.required=!i.disabled;});const mappings=[...form.querySelectorAll('[data-board-mapping]')];mappings.forEach(input=>{const duplicate=!random&&input.value&&mappings.some(other=>other!==input&&!other.disabled&&other.value===input.value);input.setCustomValidity(duplicate?'Choose a different member for each board.':'');});const panel=form.querySelector('[data-random-members]');panel.hidden=!random;panel.querySelectorAll('input').forEach(i=>i.disabled=!random);form.querySelector('[data-distribution-count]').textContent=random?`${selected.length} boards · ${panel.querySelectorAll('input:checked').length} members picked. Counts must match.`:`${selected.length} boards selected. Pick a different member for each.`;};form.addEventListener('change',update);update();
+});

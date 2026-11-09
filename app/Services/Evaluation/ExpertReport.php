@@ -3,13 +3,14 @@
 namespace App\Services\Evaluation;
 
 use App\Models\Evaluation;
+use App\Models\Survey;
 use Illuminate\Http\Request;
 
 class ExpertReport
 {
     public function filters(Request $r): array
     {
-        $data = $r->validate(['expert_id' => 'nullable|integer|min:1', 'type' => 'nullable|in:expert,departmental', 'survey_id' => 'nullable|integer|min:1', 'from' => 'nullable|date_format:Y-m-d', 'to' => $r->filled('from') ? 'nullable|date_format:Y-m-d|after_or_equal:from' : 'nullable|date_format:Y-m-d', 'evaluator_role' => 'nullable|in:Chairman,Member', 'expert_page' => 'nullable|integer|min:1|max:100000', 'submissions_page' => 'nullable|integer|min:1|max:100000', 'per_page' => 'nullable|integer|in:10,20,50', 'expert_q' => 'nullable|string|max:150', 'export' => 'nullable|in:summary,submissions']);
+        $data = $r->validate(['expert_id' => 'nullable|integer|min:1', 'expert_ids' => 'sometimes|array|max:500', 'expert_ids.*' => 'required|integer|min:1|distinct|exists:experts,id', 'activity_page' => 'nullable|integer|min:1|max:100000', 'type' => 'nullable|in:expert,departmental', 'survey_id' => 'nullable|integer|min:1', 'from' => 'nullable|date_format:Y-m-d', 'to' => $r->filled('from') ? 'nullable|date_format:Y-m-d|after_or_equal:from' : 'nullable|date_format:Y-m-d', 'evaluator_role' => 'nullable|in:Chairman,Member', 'expert_page' => 'nullable|integer|min:1|max:100000', 'submissions_page' => 'nullable|integer|min:1|max:100000', 'per_page' => 'nullable|integer|in:10,20,50', 'expert_q' => 'nullable|string|max:150', 'export' => 'nullable|in:summary,submissions']);
         $data['per_page'] = 20;
 
         return $data;
@@ -17,7 +18,7 @@ class ExpertReport
 
     public function query(array $f)
     {
-        return Evaluation::with('expert')->when($f['expert_id'] ?? null, fn ($q, $v) => $q->where('expert_id', $v))->when($f['survey_id'] ?? null, fn ($q, $v) => $q->where('survey_id', $v))->when($f['from'] ?? null, fn ($q, $v) => $q->whereDate('viva_date', '>=', $v))->when($f['to'] ?? null, fn ($q, $v) => $q->whereDate('viva_date', '<=', $v))->when($f['type'] ?? null, fn ($q, $v) => $q->where('expert_snapshot->type', $v))->when($f['evaluator_role'] ?? null, fn ($q, $v) => $q->where('evaluator_snapshot->role', $v));
+        return Evaluation::with('expert')->when($f['expert_ids'] ?? null, fn ($q, $ids) => $q->whereIn('expert_id', $ids))->when($f['expert_id'] ?? null, fn ($q, $v) => $q->where('expert_id', $v))->when($f['survey_id'] ?? null, fn ($q, $v) => $q->where('survey_id', $v))->when($f['from'] ?? null, fn ($q, $v) => $q->whereDate('viva_date', '>=', $v))->when($f['to'] ?? null, fn ($q, $v) => $q->whereDate('viva_date', '<=', $v))->when($f['type'] ?? null, fn ($q, $v) => $q->where('expert_snapshot->type', $v))->when($f['evaluator_role'] ?? null, fn ($q, $v) => $q->where('evaluator_snapshot->role', $v));
     }
 
     public function summary(array $f): array
@@ -61,6 +62,31 @@ class ExpertReport
         }unset($row);
 
         return ['total' => $total, 'expert_count' => count($experts), 'survey_count' => count($surveys), 'rows' => array_values($rows)];
+    }
+
+    public function statistics(array $filters): array
+    {
+        $counts = $this->query($filters)->toBase()->selectRaw('COUNT(*) AS submissions, COUNT(DISTINCT expert_id) AS experts, COUNT(DISTINCT user_id) AS participants, COUNT(DISTINCT survey_id) AS surveys')->first();
+
+        return [
+            'total_surveys' => Survey::count(),
+            'active_surveys' => Survey::where('status', 'active')->count(),
+            'closed_surveys' => Survey::where('status', 'closed')->count(),
+            'draft_surveys' => Survey::where('status', 'draft')->count(),
+            'submissions' => (int) $counts->submissions,
+            'experts' => (int) $counts->experts,
+            'participants' => (int) $counts->participants,
+            'surveys' => (int) $counts->surveys,
+        ];
+    }
+
+    public function activity(array $filters)
+    {
+        $metrics = $this->query($filters)->selectRaw('survey_id, COUNT(*) AS submissions, COUNT(DISTINCT expert_id) AS evaluated_experts, COUNT(DISTINCT user_id) AS participants, MAX(viva_date) AS latest_viva_date')->groupBy('survey_id')->toBase();
+
+        return Survey::withTrashed()->leftJoinSub($metrics, 'activity', 'activity.survey_id', '=', 'surveys.id')
+            ->select('surveys.*', 'activity.submissions', 'activity.evaluated_experts', 'activity.participants', 'activity.latest_viva_date')
+            ->when($filters['survey_id'] ?? null, fn ($q, $id) => $q->where('surveys.id', $id))->orderBy('surveys.title')->orderBy('surveys.id');
     }
 
     public function csv(array $f, string $kind)

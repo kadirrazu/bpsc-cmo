@@ -83,7 +83,8 @@ class ExpertReportsTest extends TestCase
         }
         $this->login();
         $this->get('/modules/evaluation/experts/'.$e->id)->assertOk()->assertSee('Evaluation History & Summary', false)->assertSee('3.00')->assertSee('View Answers');
-        $this->get('/modules/evaluation/reports/experts')->assertOk()->assertSee('Export Summary CSV');
+        $this->get('/modules/evaluation/reports/experts')->assertOk()->assertSee('Report Center');
+        $this->get(route('evaluation.report-center'))->assertOk()->assertSee('Export Summary CSV');
     }
 
     public function test_csv_exports_include_filtered_answers_and_escape_spreadsheet_formulas(): void

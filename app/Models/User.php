@@ -22,6 +22,7 @@ class User extends Authenticatable
 
     protected $fillable = [
         'mobile_number',
+        'member_number', 'floor', 'room_number', 'lift_button_number', 'name_of_po',
         'name',
         'email',
         'password',
@@ -52,6 +53,11 @@ class User extends Authenticatable
             'last_login_at' => 'datetime',
             'auth_version' => 'integer',
         ];
+    }
+
+    public function vivaPools()
+    {
+        return $this->belongsToMany(VivaPool::class, 'viva_pool_user', 'user_id', 'viva_pool_id');
     }
 
     protected static function booted(): void

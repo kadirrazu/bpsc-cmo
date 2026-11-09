@@ -17,7 +17,9 @@ use Illuminate\Auth\Events\Logout;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Str;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -25,6 +27,9 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        Gate::define('access-viva', fn (User $u) => $u->is_active && in_array($u->role, [UserRole::Admin, UserRole::Chairman], true));
+        Gate::define('manage-viva-pools', fn (User $u) => $u->is_active && $u->role === UserRole::Chairman);
+        Gate::define('distribute-viva', fn (User $u) => $u->is_active && $u->role === UserRole::Chairman);
         Paginator::defaultView('shared.pagination');
         foreach (['manage-system', 'manage-users', 'view-logs', 'view-evaluation-data'] as $ability) {
             Gate::define($ability, fn (User $u) => $u->is_active && $u->role === UserRole::Admin);
@@ -39,6 +44,11 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('access-evaluation', fn (User $u) => $u->is_active && in_array($u->role, UserRole::cases(), true));
         foreach ([User::class, Designation::class, Unit::class, Expert::class, Question::class, Survey::class] as $model) {
             $model::observe(LibraryObserver::class);
+            $model::creating(function ($record) {
+                if (! $record->transfer_uuid && Schema::hasColumn($record->getTable(), 'transfer_uuid')) {
+                    $record->transfer_uuid = (string) Str::uuid();
+                }
+            });
         }
         Event::listen(Login::class, function (Login $e) {
             $e->user->forceFill(['last_login_at' => now()])->save();

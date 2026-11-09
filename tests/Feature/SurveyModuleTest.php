@@ -42,9 +42,9 @@ class SurveyModuleTest extends TestCase
     {
         foreach (UserRole::cases() as $role) {
             $this->login($role);
-            $this->get('/dashboard')->assertOk()->assertSee('Open Module')->assertDontSee('aria-label="Evaluation module navigation"', false)->assertDontSee('Public Directory');
-            $this->get('/profile')->assertOk()->assertDontSee('aria-label="Evaluation module navigation"', false);
-            $response = $this->get('/modules/evaluation')->assertOk()->assertSee('aria-label="Evaluation module navigation"', false);
+            $this->get('/dashboard')->assertOk()->assertSee('Open Module')->assertDontSee('aria-label="Expert Evaluation System navigation"', false)->assertDontSee('Public Directory');
+            $this->get('/profile')->assertOk()->assertDontSee('aria-label="Expert Evaluation System navigation"', false);
+            $response = $this->get('/modules/evaluation')->assertOk()->assertSee('aria-label="Expert Evaluation System navigation"', false);
             if ($role === UserRole::Staff) {
                 $response->assertSee('href="'.route('surveys.index').'"', false)->assertDontSee('href="'.route('evaluations.index').'"', false);
             }if ($role === UserRole::Member) {

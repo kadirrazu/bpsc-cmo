@@ -1,5 +1,6 @@
 import './survey-question-order.js';
 import './expert-picker.js';
+import './report-selection.js';
 import '@tabler/core/dist/js/tabler.min.js';
 document.addEventListener('submit', event => {
     const form = event.target.closest('form[data-confirm-delete]');
@@ -57,3 +58,5 @@ if(typeSelect){
  typeSelect.addEventListener('change',update);update();
 }
 document.querySelectorAll('[data-print-report]').forEach(button => button.addEventListener('click',()=>window.print()));
+
+import './viva.js';

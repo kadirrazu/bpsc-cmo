@@ -11,7 +11,7 @@ class LibraryObserver
     private function fields(Model $m): array
     {
         return match (class_basename($m)) {
-            'User' => ['name', 'email', 'mobile_number', 'designation_id', 'unit', 'role', 'is_active', 'preferred_locale', 'deleted_at'],
+            'User' => ['member_number', 'floor', 'room_number', 'lift_button_number', 'name_of_po', 'name', 'email', 'mobile_number', 'designation_id', 'unit', 'role', 'is_active', 'preferred_locale', 'deleted_at'],
             'Unit' => ['code', 'name', 'sort_order', 'is_active'],
             'Expert' => ['name', 'type', 'designation', 'organization', 'specialization', 'email', 'mobile_number', 'biography', 'is_active', 'deleted_at'],
             'Survey' => ['title', 'description', 'status', 'allowed_roles', 'deleted_at'],

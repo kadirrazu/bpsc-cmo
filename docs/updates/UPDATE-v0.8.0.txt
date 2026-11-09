@@ -1,0 +1,47 @@
+BPSC CMO v0.8.0 - Viva Board Distribution module
+
+Expert Evaluation System is complete for the current scope.
+
+Added
+- Separate Dashboard module card and contextual navigation.
+- Chairman workflow: 1. Member Pools > 2. Board Distribution.
+- Pool CRUD with selected/all active Member/Chairman users, search and enrolment editing.
+- Administrator-only candidate XLSX import, sample/template download, encrypted staging,
+  row validation, paginated preview, explicit confirmation and all-or-nothing save.
+- Validated DDMMYY/DDMMYYYY dates, literal registration identifiers and normalized groups.
+- Date/post/group-specific manual or secure-random assignment of whole groups.
+- One board per member per date across all pools/posts, backed by unique constraints
+  and per-day transaction locks. Default 09:30 AM BST opening enforced server-side.
+- Assignment summaries, per-day/per-post Excel reports and audited correction workflow.
+- Optional Member/Chairman User details: Member Number, Floor, Room Number,
+  Lift Button Number, Name of PO. Included in User Excel exports; older files supported.
+- Standalone shared-credential display at /viva-board-display, independent of CMO users.
+- Administrator-configured display username/hashed password, session revocation,
+  login throttling, five-second live updates and conditional unchanged-data responses.
+- Frontend shows registration numbers and populated room/member details, not candidate
+  names or user email/mobile. Polling avoids request-audit spam.
+
+Apply
+1. Back up the database.
+2. Extract the patch into the project root, replacing matching files.
+3. Run: php artisan optimize:clear
+4. Run: php artisan migrate --force
+5. Administrator: add optional member location details, open Viva Board Distribution,
+   configure Settings/display credentials, then import candidates using the sample.
+6. Chairman: open Member Pools, then Board Distribution; select date/post/pool and assign.
+7. Open /viva-board-display and sign in with the configured shared display credentials.
+
+No new package installation is needed; built frontend assets are included.
+This patch assumes v0.7.2 is applied. Fixed README is unchanged.
+Usage and scope: docs/viva-board-distribution.md.
+
+Validation
+- Full PHP suite: 157 tests passed, 1,558 assertions (including previous Evaluation features).
+- 7 JavaScript DOM tests passed, covering safe live rendering, leading zeroes, floor zero, omitted
+  optional details, ETag, session expiry, retry warnings, user role fields, pool search
+  and manual/random mode controls.
+- Database-level member/day uniqueness and both import/distribution rollback tested.
+- Existing SQLite database upgrade retained prior users, experts, questions and surveys.
+- Frontend production build and Laravel route/view cache compilation checked.
+- Runtime checks used Linux/PHP 8.3/SQLite. Live Windows WAMP/MySQL/browser verification
+  was not available here.

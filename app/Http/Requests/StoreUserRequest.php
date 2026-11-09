@@ -17,6 +17,11 @@ class StoreUserRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'member_number' => ['nullable', 'string', 'max:150', Rule::excludeIf(! in_array($this->input('role'), ['member', 'chairman'], true))],
+            'floor' => ['nullable', 'string', 'max:150', Rule::excludeIf(! in_array($this->input('role'), ['member', 'chairman'], true))],
+            'room_number' => ['nullable', 'string', 'max:150', Rule::excludeIf(! in_array($this->input('role'), ['member', 'chairman'], true))],
+            'lift_button_number' => ['nullable', 'string', 'max:150', Rule::excludeIf(! in_array($this->input('role'), ['member', 'chairman'], true))],
+            'name_of_po' => ['nullable', 'string', 'max:150', Rule::excludeIf(! in_array($this->input('role'), ['member', 'chairman'], true))],
             'mobile_number' => ['nullable', 'string', 'regex:/^[0-9]{11}$/'],
             'name' => [
                 'required',

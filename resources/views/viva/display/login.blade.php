@@ -1,0 +1,5 @@
+@extends('viva.display.layout')
+@section('title','Board Display Sign In')
+@section('content')
+<div class="viva-display-login card"><div class="card-body"><span class="survey-section-icon mb-3"><i class="bi bi-display"></i></span><h2>Board Display Sign In</h2><p class="text-secondary">Use the display credentials provided by Administration.</p>@if(!$configured)<div class="alert alert-info">Display access has not been configured yet.</div>@endif<form method="post" action="{{ route('viva.display.sign-in') }}">@csrf<label class="form-label" for="display-user">Username</label><input class="form-control mb-3" id="display-user" name="username" maxlength="100" autocomplete="username" required autofocus><label class="form-label" for="display-pass">Password</label><input class="form-control mb-4" id="display-pass" name="password" type="password" autocomplete="current-password" required><button class="btn btn-primary w-100" @disabled(!$configured)>Open Board Display</button></form></div></div>
+@endsection

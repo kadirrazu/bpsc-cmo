@@ -1,8 +1,11 @@
 <?php
 
+use App\Console\Questions\AdminChoiceQuestion;
 use App\Enums\UserRole;
+use App\Models\DataImport;
 use App\Models\Designation;
 use App\Models\User;
+use App\Models\VivaImport;
 use App\Services\Library\Catalog;
 use App\Services\UpdateNoteOrganizer;
 use Illuminate\Support\Facades\Artisan;
@@ -24,7 +27,7 @@ Artisan::command('cmo:create-admin', function () {
 
         return 1;
     }
-    $selectedDesignation = $this->choice('Designation', array_values($designations), 0);
+    $selectedDesignation = $this->output->askQuestion(new AdminChoiceQuestion('Designation', array_values($designations), 0));
     $designationId = array_search($selectedDesignation, $designations, true);
     $name = $this->ask('Administrator name');
     $email = strtolower((string) $this->ask('Email address'));
@@ -36,7 +39,7 @@ Artisan::command('cmo:create-admin', function () {
 
         return 1;
     }
-    $selectedUnit = $this->choice('Department', array_values($unitLabels), $unitLabels['IT Section'] ?? reset($unitLabels));
+    $selectedUnit = $this->output->askQuestion(new AdminChoiceQuestion('Department', array_values($unitLabels), $unitLabels['IT Section'] ?? reset($unitLabels)));
     $unit = array_search($selectedUnit, $unitLabels, true);
     $validator = Validator::make(['name' => $name, 'email' => $email, 'password' => $password, 'password_confirmation' => $confirm], [
         'name' => 'required|string|max:255', 'email' => 'required|email|max:255|unique:users,email',
@@ -69,3 +72,7 @@ Artisan::command('cmo:organize-update-notes', function () {
 
     return 0;
 })->purpose('Move legacy root UPDATE-v*.txt files into docs/updates without overwriting different content');
+
+Schedule::call(fn () => DataImport::where('expires_at', '<', now())->delete())->daily()->name('cmo:prune-imports');
+
+Schedule::call(fn () => VivaImport::where('expires_at', '<', now())->delete())->daily()->name('cmo:prune-viva-imports');

@@ -1,0 +1,39 @@
+BPSC CMO v0.7.0 - Compact dashboard and Administrator Excel transfer
+
+Changes
+- Compact welcome card with a concise instruction and responsive workspace badge.
+- Rename the module across current UI to Expert Evaluation System.
+- Administration > Excel Import & Export, visible and accessible only to Administrator.
+- Dataset-specific export, blank template and filled Sample .xlsx download.
+- Supported datasets: Users, Designations, Units, Expert Pool, reusable Questions,
+  Surveys and ordered question assignments. Related masters/questions travel together.
+- Encrypted staging, row-level validation, paginated preview, explicit confirmation,
+  owner/expiry checks, conflict detection and atomic database application.
+- Portable UUID keys preserve references and prevent duplicates on repeat imports.
+- Password hashes are optional on export; preview masks credentials. New imported
+  users without supplied credentials need Administrator password setup.
+- Audit events for exports, sample/templates, staging, confirmation and cancellation.
+- Full database backup/history migration is outside this Excel setup transfer:
+  submissions/answers, audit history, deleted records, sessions and tokens are excluded.
+
+Apply (root-relative Paste & Replace ZIP)
+1. Back up your database.
+2. Extract this ZIP into the project root and replace matching files.
+3. Run: php artisan optimize:clear
+4. Run: php artisan migrate --force
+5. Sign in as Administrator > Administration > Excel Import & Export.
+
+Built frontend assets are included. No composer install or npm build is needed
+for applying this patch. Keep the normal Laravel scheduler running to clean up
+expired staging daily. Expired staging is also cleaned on subsequent uploads.
+
+Fixed readme.md remains unchanged. Usage/format guide: docs/data-transfer.md.
+
+Validation
+- Full PHP feature suite: 120 tests passed, 1217 assertions.
+- Frontend production build and Laravel route/view cache compilation.
+- Existing SQLite database upgrade: existing rows retained and UUIDs backfilled.
+- Cross-ID setup migration, shared-question order, Bengali content, password hashes,
+  Administrator-only routes, invalid-row blocking, conflicts, expiry, ownership,
+  encrypted/hidden credentials, repeated imports and transaction rollback tested.
+- Windows browser/MySQL execution was not available in this test environment.

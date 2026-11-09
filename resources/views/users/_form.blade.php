@@ -202,3 +202,4 @@
         @enderror
     </div>
 </div>
+<div class="card card-body mt-3" data-member-details @if(!in_array($selectedRole,['member','chairman'])) hidden @endif><h3>Viva Board Member Details <small class="text-secondary">Optional</small></h3><p class="text-secondary small">Displayed with assigned boards to help candidates find the member's room.</p><div class="row g-3">@foreach(['member_number'=>'Member Number','floor'=>'Floor','room_number'=>'Room Number','lift_button_number'=>'Lift Button Number','name_of_po'=>'Name of PO'] as $field=>$label)<div class="col-md-6"><label class="form-label" for="{{ $field }}">{{ $label }}</label><input class="form-control" id="{{ $field }}" name="{{ $field }}" maxlength="150" value="{{ old($field,($user ?? null)?->$field ?? '') }}"></div>@endforeach</div></div>

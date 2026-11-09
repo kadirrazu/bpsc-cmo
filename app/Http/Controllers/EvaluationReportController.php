@@ -49,7 +49,24 @@ class EvaluationReportController extends Controller
             $experts->prepend($selectedReportExpert);
         }
 
-        return view('reports.experts', compact('filters', 'summary', 'submissions', 'experts', 'selectedReportExpert', 'expertPages', 'currentReportExpert') + ['surveys' => Survey::withTrashed()->orderBy('title')->get()]);
+        return view('reports.experts', compact('filters', 'summary', 'submissions', 'experts', 'selectedReportExpert', 'expertPages', 'currentReportExpert') + ['compactSummary' => true, 'surveys' => Survey::withTrashed()->orderBy('title')->get()]);
+    }
+
+    public function center(Request $r, ExpertReport $reports, ExpertLookup $lookup)
+    {
+        Gate::authorize('view-expert-reports');
+        $filters = $reports->filters($r);
+        unset($filters['export'], $filters['expert_page'], $filters['submissions_page']);
+        $statistics = $reports->statistics($filters);
+        $activity = $reports->activity($filters)->paginate(10, ['*'], 'activity_page')->appends($filters)->fragment('survey-activity');
+        $experts = $lookup->query(trim($filters['expert_q'] ?? ''), true)->limit(20)->get();
+        $selectedReportExpert = ! empty($filters['expert_id']) ? $lookup->query('', true)->where('id', $filters['expert_id'])->first() : null;
+        if ($selectedReportExpert && ! $experts->contains('id', $selectedReportExpert->id)) {
+            $experts->prepend($selectedReportExpert);
+        }
+        app(Audit::class)->record('evaluation.report.center.view', ['filters' => $filters]);
+
+        return view('reports.center', compact('filters', 'statistics', 'activity', 'experts', 'selectedReportExpert') + ['surveys' => Survey::withTrashed()->orderBy('title')->get()]);
     }
 
     public function expertOptions(Request $r, ExpertLookup $lookup)

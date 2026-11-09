@@ -1,0 +1,7 @@
+@if($activity)
+<section class="card mb-4" id="survey-activity"><div class="card-header"><div><h2 class="card-title mb-1">Survey Activity</h2><span class="small text-secondary">Current survey status with participation matching the report filters. Includes surveys with no matching submissions.</span></div></div><div class="table-responsive"><table class="table table-vcenter"><thead><tr><th>Survey</th><th class="text-center">Current Status</th><th class="text-center">Submissions</th><th class="text-center">Evaluated Experts</th><th class="text-center">Participants</th><th class="text-center">Latest Viva Date</th></tr></thead><tbody>
+@forelse($activity as $survey)<tr><td>{{ $survey->title }}</td><td class="text-center"><span class="badge {{ $survey->status==='active' && !$survey->trashed() ? 'bg-teal-lt' : 'bg-secondary-lt' }}">{{ $survey->trashed() ? 'Removed' : ucfirst($survey->status) }}</span></td><td class="text-center">{{ number_format($survey->submissions ?? 0) }}</td><td class="text-center">{{ number_format($survey->evaluated_experts ?? 0) }}</td><td class="text-center">{{ number_format($survey->participants ?? 0) }}</td><td class="text-center">{{ $survey->latest_viva_date ?? '—' }}</td></tr>
+@empty<tr><td colspan="6" class="text-center py-4">No surveys found.</td></tr>
+@endforelse
+</tbody></table></div><div class="card-footer">{{ $activity->links() }}</div></section>
+@endif

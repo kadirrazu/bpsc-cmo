@@ -1,0 +1,34 @@
+BPSC CMO v0.6.2 - Administrator CLI choice prompt compatibility
+
+Problem
+After entering a Department/Unit number in cmo:create-admin, Windows may
+print "The system cannot find the path specified." before the success message.
+The account is nevertheless created.
+
+Code finding
+Symfony Console 7.4.20 enables autocomplete on ChoiceQuestion. When stty
+is available (including some Windows installations with Git tools), its
+autocomplete cleanup invokes stty with a hard-coded 2>/dev/null redirect.
+Native Windows CMD cannot use that Unix device path. The reported timing
+matches this cleanup path; direct reproduction on Windows was unavailable.
+
+Change
+Use AdminChoiceQuestion for both Designation and Department prompts.
+Autocomplete is disabled so these choices use ordinary line input and avoid
+raw-mode stty setup/cleanup. Number/name selection, defaults, validation,
+password handling, account creation and audit recording are preserved.
+No framework/vendor files are replaced.
+
+Apply
+1. Extract this ZIP into the project root, replacing matching files.
+2. Run: php artisan optimize:clear
+3. Run: php artisan cmo:create-admin
+No database migration, composer install or frontend build is required.
+Existing administrator accounts remain usable; they need not be recreated.
+
+Validation
+Full PHP test suite: 106 tests passed, including choice validation and
+administrator creation with password hashing and console audit recording.
+Tests ran on Linux/PHP 8.3. Windows terminal confirmation remains required.
+
+The fixed readme.md is unchanged.

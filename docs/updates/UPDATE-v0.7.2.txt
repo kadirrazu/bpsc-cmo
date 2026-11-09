@@ -1,0 +1,30 @@
+BPSC CMO v0.7.2 - Separate Report Center and Chairman Downloads
+
+Changes
+- Keep the detailed Expert Evaluation Reports page focused on filters, one-expert
+  question summaries, paginated submissions and print.
+- Move statistics, multi-expert downloads, CSV links and Survey Activity into the
+  separate Report Center at /modules/evaluation/reports.
+- A highlighted Report Center link appears near the detailed report heading.
+  View Detailed Reports returns from the landing page; both links preserve
+  report filters and discard unrelated page numbers.
+- Administrator and Chairman can view both report pages and download complete
+  XLSX/PDF/CSV reports. Searchable multi-expert selection remains available.
+- Member and Staff cannot view reports, the landing page or report downloads.
+- Setup data import/export/migration, staging and confirmation remain exclusively
+  Administrator-only. System management and audit access remain unchanged.
+
+Apply
+1. Extract this root-relative ZIP into the project root and replace files.
+2. Run: php artisan optimize:clear
+No new database migration, composer install or npm build is required.
+Built frontend assets are included. Fixed README remains unchanged.
+
+Usage and current permissions: docs/expert-reports.md.
+
+Validation
+Full PHP suite: 132 tests passed, 1,340 assertions.
+Chairman Excel/PDF/CSV downloads, detailed answer access,
+page separation, filter-preserving links, report denial for Member/Staff and
+continued Chairman denial for setup data transfer are checked before delivery.
+Frontend production build and Laravel route/view cache compilation checked.

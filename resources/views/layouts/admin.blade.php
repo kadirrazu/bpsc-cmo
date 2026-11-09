@@ -32,13 +32,14 @@
 @can('manage-system')
 <li class="nav-item dropdown"><button class="nav-link dropdown-toggle border-0 bg-transparent" type="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-sliders2"></i>Administration</button><div class="dropdown-menu administration-menu">
 <h6 class="dropdown-header">People & Organization</h6>
-<a class="dropdown-item" href="{{ route('users.index') }}">Users</a><a class="dropdown-item" href="{{ route('designations.index') }}">Designations</a><a class="dropdown-item" href="{{ route('units.index') }}">Units</a><div class="dropdown-divider"></div><h6 class="dropdown-header">Access & Accountability</h6><a class="dropdown-item" href="{{ route('roles.index') }}">Roles & Permissions</a><a class="dropdown-item" href="{{ route('audit-logs.index') }}">Audit Logs</a></div></li>
+<a class="dropdown-item" href="{{ route('users.index') }}">Users</a><a class="dropdown-item" href="{{ route('designations.index') }}">Designations</a><a class="dropdown-item" href="{{ route('units.index') }}">Units</a><div class="dropdown-divider"></div><h6 class="dropdown-header">Access & Accountability</h6><a class="dropdown-item" href="{{ route('roles.index') }}">Roles & Permissions</a><a class="dropdown-item" href="{{ route('audit-logs.index') }}">Audit Logs</a><div class="dropdown-divider"></div><h6 class="dropdown-header">Data Management</h6><a class="dropdown-item" href="{{ route('transfers.index') }}"><i class="bi bi-file-earmark-spreadsheet me-2"></i>Excel Import &amp; Export</a></div></li>
 @endcan
 </ul></div>
         </div>
     </nav>
 </header>
 @if(request()->is('modules/evaluation*'))@include('modules.evaluation.navigation')@endif
+@if(request()->is('modules/viva*'))@include('viva.navigation')@endif
 <div class="page-wrapper"><main class="page-body"><div class="container-xl">
 @if(session('success'))<div class="alert alert-success" role="alert">{{ session('success') }}</div>@endif
 @if($errors->any())<div class="alert alert-danger" role="alert"><ul class="mb-0">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
