@@ -1,0 +1,53 @@
+BPSC CMO v0.9.3 - Administrator Board-wise Candidate PDF / Print
+Includes the v0.9.2 cleanup command (not delivered separately).
+
+INSTALL
+Apply after v0.9.1. Extract into the project root and replace matching files.
+Run: php artisan optimize:clear
+No migration, Composer install or frontend build is required.
+The fixed README is unchanged.
+
+CANDIDATE IMPORT REPORTS (Administrator only)
+Open Viva Board Distribution -> Candidate Import.
+Choose Imported Viva Date and optionally Post Code / Name, then View Boards.
+Download Board Lists (PDF) / Print Board Lists exports all matching boards,
+including boards beyond the current on-screen pagination page.
+Each board row also has PDF and Print links for that single board.
+Reports work before board distribution, as well as after assignment.
+Chairman, Member, Staff and guests cannot access these report endpoints.
+Member's existing My Viva Board download remains independently scoped to self.
+
+LAYOUT
+Heading contains optional Unit/Ministry, Post Code, Post Name, Viva Date, Board
+and candidate count. Columns: SL, Registration Number, Name, Remarks / Notes.
+Remarks / Notes is a blank column for handwritten notes; this release adds no
+new saved candidate notes field.
+Registration identifiers retain all leading zeroes and up to 40 digits.
+Order compares numeric magnitude without integer or floating-point conversion:
+0002, 0010, 0100. Exact textual value breaks ties; stored values never change.
+Serial numbering restarts at 1 for every board.
+Each board starts on a new page and never shares a page with another board.
+Large lists continue on more pages at a readable size; their board/post heading
+and column labels repeat. PDF has page numbering and Bengali font support.
+Browser Print uses the same board grouping and table/header content.
+Up to 20,000 candidates per report; narrow to a post/board for larger imports.
+Downloads/print views are audited and are served with private, no-store headers.
+
+CLEANUP COMMAND
+See UPDATE-v0.9.2.txt in this same folder for all four commands and dependencies:
+php artisan cmo:viva-clear pools
+php artisan cmo:viva-clear distributions
+php artisan cmo:viva-clear candidates
+php artisan cmo:viva-clear all
+Each requires an interactive yes/no confirmation, default No. No production
+application data was cleared while implementing this release.
+
+VALIDATION
+Full Laravel suite: 174 tests / 1750 assertions passed.
+Command coverage includes cancel, invalid scope, noninteractive refusal, all four
+scopes, soft-deleted pools, retained users/settings/other module data, foreign-key
+handling, audit history and rollback on failure.
+Report coverage includes role restrictions, date/post/single-board filters,
+leading zeroes, 40-digit identifiers, numeric ordering and board PDF page breaks.
+Rendered PDF QA: Bengali name, two boards, 110-row long board, repeated headers,
+all registrations, separate board pages and no blank/mixed-board pages checked.

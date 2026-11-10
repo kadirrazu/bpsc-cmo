@@ -21,7 +21,7 @@ class DisplayData
         $boards = [];
         foreach ($assignments as $a) {
             $member = $a->member ? app(Workspace::class)->member($a->member) : $a->member_snapshot;
-            $boards[] = ['post_code' => $a->board->post_code, 'post_name' => $a->board->post_name, 'board' => $a->board->board, 'member' => $member, 'candidate_count' => $a->board->candidates_count, 'registrations' => $a->board->candidates()->orderBy('reg')->pluck('reg')->all()];
+            $boards[] = ['post_code' => $a->board->post_code, 'post_name' => $a->board->post_name, 'unit' => $a->board->unit, 'ministry' => $a->board->ministry, 'board' => $a->board->board, 'member' => $member, 'candidate_count' => $a->board->candidates_count, 'registrations' => $a->board->candidates()->orderBy('reg')->pluck('reg')->all()];
         }
         usort($boards, fn ($a, $b) => strnatcmp($a['post_code'].'-'.$a['board'], $b['post_code'].'-'.$b['board']));
 

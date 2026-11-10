@@ -1,0 +1,26 @@
+BPSC CMO v0.8.4 - Chairman-first and numeric Member Number ordering
+
+Viva member lists now show:
+1. Chairmen first, ordered by name.
+2. Members with numeric Member Number values, in ascending numeric order.
+   Examples: 2, 03, 10. Leading zeroes do not change numeric ordering.
+3. Members with blank/non-numeric numbers, ordered by name.
+Names break equal-number ties; ID breaks otherwise identical ties.
+
+This applies to pool creation/editing, Pick Members for Random Assignment and
+specific-assignment member dropdowns. Sorting is display-only: stored numbers,
+pool membership, eligibility checks and random distribution remain unchanged.
+Integer strings are compared without numeric overflow.
+
+Apply
+Extract into the project root and replace matching files, then run:
+php artisan optimize:clear
+
+No database migration or frontend build is required. Fixed README is unchanged.
+
+Validation
+Full PHP suite: 160 tests passed, 1,578 assertions.
+HTTP-rendered order checked for pool create/edit, random pick list and manual
+assignment dropdown. Empty/non-numeric numbers, duplicate numeric values,
+leading zeroes, whitespace, zero and very large numbers covered. Ineligible
+users stay excluded and original member-number values are preserved.

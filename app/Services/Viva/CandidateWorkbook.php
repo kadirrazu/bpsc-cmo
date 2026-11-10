@@ -15,7 +15,7 @@ use ZipArchive;
 
 class CandidateWorkbook
 {
-    public const HEADERS = ['post_code', 'post_name', 'vdate', 'board', 'reg', 'name'];
+    public const HEADERS = ['post_code', 'post_name', 'unit', 'ministry', 'vdate', 'board', 'reg', 'name'];
 
     public function sample(bool $blank = false): Spreadsheet
     {
@@ -25,9 +25,9 @@ class CandidateWorkbook
         if (! $blank) {
             $date = app(Workspace::class)->today();
             $vdate = CarbonImmutable::parse($date)->format('dmY');
-            $rows[] = ['250019', 'Fisheries Survey Officer', $vdate, '01', '00123456', 'Sample Candidate'];
-            $rows[] = ['250019', 'Fisheries Survey Officer', $vdate, '01', '00123457', ''];
-            $rows[] = ['250019', 'Fisheries Survey Officer', $vdate, '02', '00123458', ''];
+            $rows[] = ['250019', 'Fisheries Survey Officer', 'Unit 01', 'Ministry of Fisheries and Livestock', $vdate, '01', '00123456', 'Sample Candidate'];
+            $rows[] = ['250019', 'Fisheries Survey Officer', 'Unit 01', 'Ministry of Fisheries and Livestock', $vdate, '01', '00123457', ''];
+            $rows[] = ['250019', 'Fisheries Survey Officer', 'Unit 01', 'Ministry of Fisheries and Livestock', $vdate, '02', '00123458', ''];
         }
         foreach ($rows as $r => $row) {
             foreach ($row as $c => $value) {
@@ -35,11 +35,11 @@ class CandidateWorkbook
             }
         }
         $sheet->freezePane('A2');
-        $sheet->getStyle('A1:F1')->getFont()->setBold(true);
-        foreach (range('A', 'F') as $column) {
+        $sheet->getStyle('A1:H1')->getFont()->setBold(true);
+        foreach (range('A', 'H') as $column) {
             $sheet->getColumnDimension($column)->setWidth($column === 'B' ? 36 : 22);
         }
-        $sheet->getStyle('A2:F'.max(2, count($rows)))->getNumberFormat()->setFormatCode('@');
+        $sheet->getStyle('A2:H'.max(2, count($rows)))->getNumberFormat()->setFormatCode('@');
 
         return $book;
     }
@@ -60,8 +60,8 @@ class CandidateWorkbook
         $reader = new Xlsx;
         $reader->setReadDataOnly(false);
         $info = $reader->listWorksheetInfo($path);
-        if (count($info) !== 1 || $info[0]['totalRows'] > 5001 || $info[0]['totalColumns'] > 6) {
-            $this->fail('Use one worksheet with up to 5,000 candidate rows and the six sample headers.');
+        if (count($info) !== 1 || $info[0]['totalRows'] > 5001 || $info[0]['totalColumns'] > 8) {
+            $this->fail('Use one worksheet with up to 5,000 candidate rows and the eight sample headers.');
         }
         $book = $reader->load($path);
         try {
@@ -69,7 +69,7 @@ class CandidateWorkbook
             foreach (self::HEADERS as $c => $header) {
                 $actual = trim((string) $sheet->getCell([$c + 1, 1])->getValue());
                 if ($actual !== $header && ! ($header === 'name' && $actual === '')) {
-                    $this->fail('Headers must be post_code, post_name, vdate, board, reg, name (name is optional).');
+                    $this->fail('Headers must be post_code, post_name, unit, ministry, vdate, board, reg, name (name is optional).');
                 }
             }
             $rows = [];
@@ -135,7 +135,7 @@ class CandidateWorkbook
         $posts = [];
         foreach ($rows as $row) {
             try {
-                Validator::make($row, ['post_code' => 'required|string|regex:/^[0-9]{1,20}$/', 'post_name' => 'required|string|max:255', 'vdate' => 'required|string', 'board' => 'required|string|regex:/^[0-9]{1,3}$/', 'reg' => 'required|string|regex:/^[0-9]{1,40}$/', 'name' => 'nullable|string|max:255'])->validate();
+                Validator::make($row, ['post_code' => 'required|string|regex:/^[0-9]{1,20}$/', 'post_name' => 'required|string|max:255', 'unit' => 'nullable|string|max:255', 'ministry' => 'nullable|string|max:255', 'vdate' => 'required|string', 'board' => 'required|string|regex:/^[0-9]{1,3}$/', 'reg' => 'required|string|regex:/^[0-9]{1,40}$/', 'name' => 'nullable|string|max:255'])->validate();
                 $date = $this->date($row['vdate']);
                 $board = str_pad(ltrim($row['board'], '0'), 2, '0', STR_PAD_LEFT);
                 if ((int) $board < 1) {
@@ -146,11 +146,19 @@ class CandidateWorkbook
                     $this->fail('Duplicate registration for the same viva date and post code in this workbook.');
                 } $seen[$key] = true;
                 $post = $date.'|'.$row['post_code'];
-                if (isset($posts[$post]) && $posts[$post] !== $row['post_name']) {
-                    $this->fail('A post code must use one post name on the same date.');
-                } $posts[$post] = $row['post_name'];
+                $row['unit'] = $row['unit'] ?? '';
+                $row['ministry'] = $row['ministry'] ?? '';
+                $metadata = array_intersect_key($row, array_flip(['post_name', 'unit', 'ministry']));
+                if (isset($posts[$post]) && $posts[$post] !== $metadata) {
+                    $this->fail('A post code must use one post name, unit and ministry on the same date.');
+                } $posts[$post] = $metadata;
                 if (VivaBoard::where('vdate', $date)->where('post_code', $row['post_code'])->where('post_name', '!=', $row['post_name'])->exists()) {
                     $this->fail('Post name conflicts with existing imported boards for this date/post code.');
+                }
+                foreach (['unit', 'ministry'] as $field) {
+                    if (VivaBoard::where('vdate', $date)->where('post_code', $row['post_code'])->whereNotNull($field)->where($field, '!=', $row[$field])->exists()) {
+                        $this->fail(ucfirst($field).' conflicts with existing boards for this date/post code.');
+                    }
                 }
                 $target = VivaBoard::where(['vdate' => $date, 'post_code' => $row['post_code'], 'board' => $board])->first();
                 $existing = VivaCandidate::where(['vdate' => $date, 'post_code' => $row['post_code'], 'reg' => $row['reg']])->first();
@@ -181,7 +189,8 @@ class CandidateWorkbook
     public function apply(array $plan): void
     {
         foreach ($plan['items'] as $item) {
-            $board = VivaBoard::firstOrCreate(['vdate' => $item['date'], 'post_code' => $item['post_code'], 'board' => $item['board']], ['post_name' => $item['post_name']]);
+            $board = VivaBoard::firstOrCreate(['vdate' => $item['date'], 'post_code' => $item['post_code'], 'board' => $item['board']], ['post_name' => $item['post_name'], 'unit' => $item['unit'] !== '' ? $item['unit'] : null, 'ministry' => $item['ministry'] !== '' ? $item['ministry'] : null]);
+            $board->update(['unit' => $item['unit'] !== '' ? $item['unit'] : null, 'ministry' => $item['ministry'] !== '' ? $item['ministry'] : null]);
             VivaCandidate::updateOrCreate(['vdate' => $item['date'], 'post_code' => $item['post_code'], 'reg' => $item['reg']], ['viva_board_id' => $board->id, 'name' => $item['name'] ?: null]);
         }
         // Moving candidates before assignment may leave an empty group; remove it.

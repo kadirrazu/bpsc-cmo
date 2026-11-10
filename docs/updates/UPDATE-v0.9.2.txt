@@ -1,0 +1,54 @@
+BPSC CMO v0.9.2 - Confirmed Viva Data Cleanup Command
+
+INSTALL
+Apply after v0.9.1. Extract into the project root and replace matching files.
+Run: php artisan optimize:clear
+No migration, Composer install or frontend build is needed.
+The fixed README is unchanged.
+
+COMMANDS (from the project root)
+php artisan cmo:viva-clear pools
+  Deletes all member pools (including soft-deleted pools) and pool memberships.
+  Keeps users, candidates, imported boards and existing board assignments.
+  Existing assignments lose their pool link, but keep the member/board mapping.
+
+php artisan cmo:viva-clear distributions
+  Deletes all board assignments across all dates.
+  Keeps member pools, imported boards, candidates and candidate-import previews.
+  Pending previews are still revalidated when confirmed.
+
+php artisan cmo:viva-clear candidates
+  Deletes all imported candidates, board groups and staged/applied import batches.
+  Also deletes ALL board assignments and internal date-lock records, because they
+  depend on imported boards. Member pools and memberships remain.
+
+php artisan cmo:viva-clear all
+  Deletes the above Viva operational data together, across all dates.
+
+CONFIRMATION
+Each command shows the configured database, affected tables and current row counts,
+then asks: Permanently delete the Viva data listed above? (yes/no) [no]
+Type yes to proceed. No/default cancels without deleting anything.
+--no-interaction is refused. There is no confirmation-bypass/force option.
+After confirmation, actual deleted row counts are displayed.
+
+Deletion is permanent: back up the database first. Run while nobody is importing,
+editing pools or distributing boards. Recommended sequence for an active installation:
+php artisan down
+php artisan cmo:viva-clear all
+php artisan up
+Use the scope you need instead of all. Restore normal access using up even if you cancel.
+Run these from a trusted server terminal; commands do not use web user sessions.
+
+Users and their Member/Chairman profile information, Expert Evaluation data,
+Viva settings/display credentials and existing audit logs are retained in every scope.
+A console audit record stores the scope and deleted row counts.
+DELETE runs in one transaction with foreign keys enabled. Failure rolls back the cleanup.
+Tables become empty; auto-increment counters are intentionally not reset.
+No real application dataset was cleared during development/testing.
+
+VALIDATION
+Full Laravel test suite and the focused command tests are included in this release.
+Coverage: invalid scope; noninteractive refusal; cancelled confirmation; each scope;
+soft-deleted pools; assignment foreign keys; repeated cleanup; retained data/settings/
+audit history; complete rollback on audit failure.

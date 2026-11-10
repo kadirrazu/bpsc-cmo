@@ -1,0 +1,40 @@
+BPSC CMO v0.9.5 - A4 Candidate Report Layout Polish
+
+INSTALL
+Apply after v0.9.4. Extract into the project root and replace matching files.
+Run: php artisan optimize:clear
+No database migration, Composer install or frontend build is needed.
+The fixed README is unchanged.
+
+CANDIDATE PDF / PRINT
+Applies to Administrator board-wise candidate reports and Member My Viva Board
+candidate PDFs/print views. Existing role restrictions and member isolation remain.
+- Paper: A4 portrait. PDF explicitly sets A4/P; browser print declares A4 portrait.
+- Footer left: Chairman Office, BPSC.
+- Footer right: Page X of Y, with total pages calculated per document.
+- A light grey separator line spans the top of the footer.
+- Post/board information uses a compact, 8.5pt tabular header with muted grey
+  labels, thin borders, white cells and dark, print-friendly text.
+- Optional Unit/Ministry and Member location details are retained when provided.
+- Post/board headings and candidate column headings repeat on continuation pages.
+- SL, Registration Number and Remarks/Notes headings and values align horizontally
+  and vertically in the centre. Name stays left aligned and vertically centred.
+- The notes column stays blank for handwritten notes. Member reports now share
+  the same four-column candidate print layout and notes space.
+- Registration identifiers, leading zeroes and existing order are preserved.
+- Each new board starts on its own page. Large boards can continue over several
+  pages without mixing another board into the same page.
+
+PRINT
+Open the existing Print action and use Print Board Candidate Lists.
+A4 portrait and margin-box footer counters are set in print CSS.
+Use the current Chrome/Edge print dialog; turn off the browser's own Headers and
+footers if it adds duplicate URL/date labels. The downloaded A4 PDF also provides
+an exact paginated version for printing through a PDF viewer.
+
+VALIDATION
+Full Laravel suite: 180 tests / 1791 assertions passed. PHP style check passed.
+Rendered multi-board/long-list PDFs checked for A4 dimensions, compact tabular
+headers, repeating post/board details, centred candidate cells, footer alignment,
+separator and correct per-page X/Y totals. All 110 test registrations retained.
+Member PDF shares the renderer and preserves the authenticated-member scope.

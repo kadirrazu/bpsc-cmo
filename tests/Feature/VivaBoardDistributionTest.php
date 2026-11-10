@@ -15,7 +15,9 @@ use App\Models\VivaSetting;
 use App\Services\Transfer\ImportPlan;
 use App\Services\Transfer\Workbook;
 use App\Services\Viva\CandidateWorkbook;
+use App\Services\Viva\DisplayData;
 use App\Services\Viva\Distribution;
+use App\Services\Viva\Workspace;
 use Carbon\Carbon;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -99,7 +101,7 @@ class VivaBoardDistributionTest extends TestCase
 
     private function row(array $extra = []): array
     {
-        return $extra + ['post_code' => '250019', 'post_name' => 'Fisheries Survey Officer', 'vdate' => '101126', 'board' => '01', 'reg' => '00123456', 'name' => ''];
+        return $extra + ['post_code' => '250019', 'post_name' => 'Fisheries Survey Officer', 'unit' => 'Unit 01', 'ministry' => 'Ministry of Fisheries', 'vdate' => '101126', 'board' => '01', 'reg' => '00123456', 'name' => ''];
     }
 
     private function stage(array $rows): VivaImport
@@ -137,7 +139,12 @@ class VivaBoardDistributionTest extends TestCase
     {
         foreach ([UserRole::Member, UserRole::Staff] as $role) {
             $this->login($role);
-            foreach (['viva.home', 'viva.pools.index', 'viva.boards.index', 'viva.imports.index', 'viva.settings.edit'] as $route) {
+            if ($role === UserRole::Member) {
+                $this->get(route('viva.home'))->assertRedirect(route('viva.my-board.index'));
+            } else {
+                $this->get(route('viva.home'))->assertForbidden();
+            }
+            foreach (['viva.pools.index', 'viva.boards.index', 'viva.imports.index', 'viva.settings.edit'] as $route) {
                 $this->get(route($route))->assertForbidden();
             }$this->post(route('viva.boards.store'))->assertForbidden();
             $this->get(route('viva.report', ['vdate' => '2026-11-10']))->assertForbidden();
@@ -394,9 +401,9 @@ class VivaBoardDistributionTest extends TestCase
         $response = $this->get(route('viva.report', ['vdate' => '2026-11-10']))->assertOk();
         $path = $response->baseResponse->getFile()->getPathname();
         $book = IOFactory::load($path);
-        $this->assertSame('00123456', $book->getSheetByName('Candidates')->getCell('E2')->getValue());
-        $this->assertSame('01', $book->getSheetByName('Boards')->getCell('D2')->getValue());
-        $this->assertSame('501', $book->getSheetByName('Boards')->getCell('H2')->getValue());
+        $this->assertSame('00123456', $book->getSheetByName('Candidates')->getCell('G2')->getValue());
+        $this->assertSame('01', $book->getSheetByName('Boards')->getCell('F2')->getValue());
+        $this->assertSame('501', $book->getSheetByName('Boards')->getCell('J2')->getValue());
         $book->disconnectWorksheets();
         unlink($path);
     }
@@ -511,5 +518,190 @@ class VivaBoardDistributionTest extends TestCase
         $this->assertDatabaseCount('viva_candidates', 0);
         $this->assertDatabaseCount('viva_boards', 0);
         $this->assertSame('pending', $batch->fresh()->status);
+    }
+
+    public function test_pending_boards_can_be_distributed_later_than_opening_time_on_the_same_day(): void
+    {
+        $this->login();
+        $firstMember = User::factory()->create(['role' => 'member']);
+        $secondMember = User::factory()->create(['role' => 'member']);
+        $pool = $this->pool([$firstMember, $secondMember]);
+        $firstBoard = $this->board();
+        $secondBoard = $this->board(group: '02', regs: ['009']);
+        $this->travelTo(Carbon::parse('2026-11-10 10:15:00', 'Asia/Dhaka'));
+        $this->get(route('viva.boards.index', ['vdate' => '2026-11-10', 'pool_id' => $pool->id]))
+            ->assertOk()->assertSee('Distribution is open')->assertSee('09:30 AM')
+            ->assertSee('Pending boards can be assigned at any time')->assertDontSee('The opening time has passed');
+        $this->post(route('viva.boards.store'), $this->data($pool, $firstBoard, $firstMember))->assertSessionHasNoErrors();
+        $this->travelTo(Carbon::parse('2026-11-10 16:45:00', 'Asia/Dhaka'));
+        $this->post(route('viva.boards.store'), $this->data($pool, $secondBoard, $secondMember))->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('viva_assignments', ['viva_board_id' => $firstBoard->id, 'user_id' => $firstMember->id]);
+        $this->assertDatabaseHas('viva_assignments', ['viva_board_id' => $secondBoard->id, 'user_id' => $secondMember->id]);
+    }
+
+    public function test_pool_forms_and_assignment_lists_put_chairmen_first_then_numeric_member_numbers(): void
+    {
+        $chair = $this->login();
+        $chair->update(['name' => 'Z Chairman']);
+        $this->withSession(['auth_version' => $chair->fresh()->auth_version]);
+        $otherChair = User::factory()->create(['role' => 'chairman', 'name' => 'A Chairman']);
+        $ten = User::factory()->create(['role' => 'member', 'name' => 'Member Ten', 'member_number' => '10']);
+        $two = User::factory()->create(['role' => 'member', 'name' => 'Beta Member', 'member_number' => '02']);
+        $sameTwo = User::factory()->create(['role' => 'member', 'name' => 'Delta Member', 'member_number' => '2']);
+        $three = User::factory()->create(['role' => 'member', 'name' => 'Member Three', 'member_number' => '3']);
+        $missing = User::factory()->create(['role' => 'member', 'name' => 'Aaron Missing', 'member_number' => null]);
+        $nonNumeric = User::factory()->create(['role' => 'member', 'name' => 'Zeta Prefix', 'member_number' => 'M-01']);
+        $inactive = User::factory()->create(['role' => 'member', 'name' => 'Inactive', 'member_number' => '1', 'is_active' => false]);
+        $staff = User::factory()->create(['role' => 'staff', 'name' => 'Staff', 'member_number' => '0']);
+        $members = [$chair, $otherChair, $ten, $two, $sameTwo, $three, $missing, $nonNumeric, $inactive, $staff];
+        $pool = $this->pool($members);
+        $this->board();
+        $this->open();
+        $expected = array_map(fn ($user) => (string) $user->id, [$otherChair, $chair, $two, $sameTwo, $three, $ten, $missing, $nonNumeric]);
+        foreach ([route('viva.pools.create'), route('viva.pools.edit', $pool)] as $url) {
+            $response = $this->get($url)->assertOk();
+            $dom = new \DOMDocument;
+            @$dom->loadHTML($response->getContent());
+            $xpath = new \DOMXPath($dom);
+            $ids = [];
+            foreach ($xpath->query('//*[@data-pool-member]//input[@type="checkbox"]') as $input) {
+                $ids[] = $input->getAttribute('value');
+            }
+            $this->assertSame($expected, $ids);
+        }
+        $response = $this->get(route('viva.boards.index', ['vdate' => '2026-11-10', 'pool_id' => $pool->id]))->assertOk();
+        $dom = new \DOMDocument;
+        @$dom->loadHTML($response->getContent());
+        $xpath = new \DOMXPath($dom);
+        $ids = [];
+        foreach ($xpath->query('//*[@data-random-members]//input[@type="checkbox"]') as $input) {
+            $ids[] = $input->getAttribute('value');
+        }
+        $this->assertSame($expected, $ids);
+        $ids = [];
+        foreach ($xpath->query('(//select[@data-board-mapping])[1]/option[@value!=""]') as $option) {
+            $ids[] = $option->getAttribute('value');
+        }
+        $this->assertSame($expected, $ids);
+        $this->assertSame('02', $two->fresh()->member_number);
+    }
+
+    public function test_numeric_member_order_handles_whitespace_zeroes_and_large_integer_text_without_rewriting_values(): void
+    {
+        $large = User::factory()->create(['role' => 'member', 'member_number' => '100000000000000000000000000000']);
+        $smaller = User::factory()->create(['role' => 'member', 'member_number' => '99999999999999999999999999999']);
+        $three = User::factory()->create(['role' => 'member', 'member_number' => ' 003 ']);
+        $zero = User::factory()->create(['role' => 'member', 'member_number' => '000']);
+        $ordered = app(Workspace::class)->orderedMembers(collect([$large, $smaller, $three, $zero]));
+        $this->assertSame([$zero->id, $three->id, $smaller->id, $large->id], $ordered->pluck('id')->all());
+        $this->assertSame(' 003 ', $three->fresh()->member_number);
+        $this->assertSame('000', $zero->fresh()->member_number);
+    }
+
+    public function test_random_mode_is_first_and_default_and_opening_advice_is_chairman_only(): void
+    {
+        $chair = $this->login();
+        $member = User::factory()->create(['role' => 'member']);
+        $pool = $this->pool([$chair, $member]);
+        $this->board();
+        $this->open();
+        $url = route('viva.boards.index', ['vdate' => '2026-11-10', 'pool_id' => $pool->id]);
+        $response = $this->get($url)->assertOk()->assertSee('You do not need to assign all boards at the opening time.');
+        $dom = new \DOMDocument;
+        @$dom->loadHTML($response->getContent());
+        $xpath = new \DOMXPath($dom);
+        $modes = $xpath->query('//form[@data-viva-distribution]//input[@name="mode"]');
+        $this->assertSame(2, $modes->length);
+        $this->assertSame('random', $modes->item(0)->getAttribute('value'));
+        $this->assertTrue($modes->item(0)->hasAttribute('checked'));
+        $this->assertSame('manual', $modes->item(1)->getAttribute('value'));
+        $this->assertFalse($modes->item(1)->hasAttribute('checked'));
+        // A validation round trip keeps the user's explicit specific-assignment choice.
+        $response = $this->withSession(['_old_input' => ['mode' => 'manual']])->get($url)->assertOk();
+        @$dom->loadHTML($response->getContent());
+        $xpath = new \DOMXPath($dom);
+        $this->assertSame('manual', $xpath->query('//input[@name="mode" and @checked]')->item(0)->getAttribute('value'));
+        $this->withSession(['_old_input' => []]);
+        $this->login(UserRole::Admin);
+        $this->get($url)->assertOk()->assertDontSee('You do not need to assign all boards at the opening time.')->assertDontSee('Distribute Selected Boards');
+        $this->post(route('viva.boards.store'))->assertForbidden();
+    }
+
+    public function test_optional_metadata_is_staged_validated_and_preserved_in_sample_and_display(): void
+    {
+        $this->login(UserRole::Admin);
+        $batch = $this->stage([$this->row(['unit' => 'Unit 07', 'ministry' => 'Ministry of Education'])]);
+        $this->get(route('viva.imports.preview', $batch))->assertOk()->assertSee('Unit 07')->assertSee('Ministry of Education');
+        $this->post(route('viva.imports.confirm', $batch), ['confirmation' => 1])->assertSessionHasNoErrors();
+        $board = VivaBoard::firstOrFail();
+        $this->assertSame('Unit 07', $board->unit);
+        $this->assertSame('Ministry of Education', $board->ministry);
+        $plan = app(CandidateWorkbook::class)->plan([$this->row(['unit' => 'Different', '_row' => 2])]);
+        $this->assertNotEmpty($plan['errors']);
+        $blank = app(CandidateWorkbook::class)->plan([$this->row(['post_code' => '999', 'unit' => '', 'ministry' => '', '_row' => 2])]);
+        $this->assertEmpty($blank['errors']);
+        app(CandidateWorkbook::class)->apply($blank);
+        $this->assertNull(VivaBoard::where('post_code', '999')->first()->unit);
+        $book = app(CandidateWorkbook::class)->sample();
+        $this->assertSame('unit', $book->getActiveSheet()->getCell('C1')->getValue());
+        $this->assertSame('ministry', $book->getActiveSheet()->getCell('D1')->getValue());
+        $this->assertSame('name', $book->getActiveSheet()->getCell('H1')->getValue());
+        $book->disconnectWorksheets();
+        $member = User::factory()->create(['role' => 'member']);
+        VivaAssignment::create(['vdate' => '2026-11-10', 'viva_board_id' => $board->id, 'user_id' => $member->id, 'assigned_by' => auth()->id(), 'member_snapshot' => ['name' => $member->name], 'mode' => 'manual']);
+        $display = app(DisplayData::class);
+        $payload = $display->payload($display->assignments('2026-11-10'), '2026-11-10');
+        $this->assertSame('Unit 07', $payload['boards'][0]['unit']);
+        $this->assertSame('Ministry of Education', $payload['boards'][0]['ministry']);
+    }
+
+    public function test_member_can_only_view_download_and_print_their_own_board_even_with_forged_ids(): void
+    {
+        $member = $this->login(UserRole::Member);
+        $other = User::factory()->create(['role' => 'member']);
+        $mine = $this->board(regs: ['00000123']);
+        $mine->update(['unit' => 'Unit 09', 'ministry' => 'Education']);
+        $theirs = $this->board(group: '02', regs: ['99999999']);
+        foreach ([[$mine, $member], [$theirs, $other]] as [$board,$user]) {
+            VivaAssignment::create(['vdate' => '2026-11-10', 'viva_board_id' => $board->id, 'user_id' => $user->id, 'assigned_by' => $member->id, 'member_snapshot' => ['name' => $user->name], 'mode' => 'manual']);
+        }
+        $forged = ['vdate' => '2026-11-10', 'user_id' => $other->id, 'board_id' => $theirs->id, 'assignment_id' => VivaAssignment::where('user_id', $other->id)->value('id')];
+        $this->get(route('dashboard'))->assertOk()->assertSee('Viva Board Distribution');
+        $this->get(route('viva.my-board.index', $forged))->assertOk()->assertSee('00000123')->assertSee('Unit 09')->assertDontSee('99999999')->assertDontSee('Distribution Summary')->assertDontSee('Candidate Import');
+        $this->get(route('viva.my-board.download', $forged + ['format' => 'print']))->assertOk()->assertSee('00000123')->assertDontSee('99999999');
+        $response = $this->get(route('viva.my-board.download', $forged + ['format' => 'xlsx']))->assertOk();
+        $path = $response->baseResponse->getFile()->getPathname();
+        $book = IOFactory::load($path);
+        $sheet = $book->getActiveSheet();
+        $this->assertSame('00000123', $sheet->getCell('G2')->getValue());
+        $this->assertSame('Unit 09', $sheet->getCell('D2')->getValue());
+        $this->assertSame(2, $sheet->getHighestRow());
+        $book->disconnectWorksheets();
+        unlink($path);
+        $this->get(route('viva.my-board.download', $forged + ['format' => 'pdf']))->assertOk()->assertHeader('Content-Type', 'application/pdf');
+        $this->get(route('viva.my-board.index', ['vdate' => '2026-11-11', 'user_id' => $other->id]))->assertOk()->assertSee('No board assigned')->assertDontSee('99999999');
+        $this->get(route('viva.my-board.download', ['vdate' => '2026-11-11', 'format' => 'xlsx']))->assertNotFound();
+        foreach (['viva.boards.index', 'viva.report', 'viva.imports.index', 'viva.pools.index', 'viva.settings.edit'] as $route) {
+            $this->get(route($route, $forged))->assertForbidden();
+        }
+        $this->get(route('viva.my-board.download', ['vdate' => 'invalid', 'format' => 'xlsx']))->assertSessionHasErrors('vdate');
+        $this->login(UserRole::Staff);
+        $this->get(route('viva.my-board.index'))->assertForbidden();
+        $this->get(route('viva.my-board.download', ['vdate' => '2026-11-10', 'format' => 'pdf']))->assertForbidden();
+    }
+
+    public function test_my_board_print_includes_all_candidates_beyond_screen_pagination_and_pdf_has_multiple_pages(): void
+    {
+        $member = $this->login(UserRole::Member);
+        $board = $this->board(regs: array_map(fn ($i) => str_pad((string) $i, 8, '0', STR_PAD_LEFT), range(1, 110)));
+        VivaAssignment::create(['vdate' => '2026-11-10', 'viva_board_id' => $board->id, 'user_id' => $member->id, 'assigned_by' => $member->id, 'member_snapshot' => ['name' => $member->name], 'mode' => 'manual']);
+        $this->get(route('viva.my-board.index', ['vdate' => '2026-11-10']))->assertOk()->assertSee('00000050')->assertDontSee('00000110');
+        $this->get(route('viva.my-board.index', ['vdate' => '2026-11-10', 'page' => 3]))->assertOk()->assertSee('00000110');
+        $this->get(route('viva.my-board.download', ['vdate' => '2026-11-10', 'format' => 'print']))->assertOk()->assertSee('00000110');
+        $response = $this->get(route('viva.my-board.download', ['vdate' => '2026-11-10', 'format' => 'pdf']))->assertOk();
+        $this->assertStringStartsWith('%PDF-', $response->getContent());
+        $pages = preg_match_all('~/Type\s*/Page\b~', $response->getContent());
+        $this->assertGreaterThan(1,$pages);
+        $this->assertLessThanOrEqual(8,$pages);
     }
 }

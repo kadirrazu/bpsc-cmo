@@ -1,0 +1,59 @@
+BPSC CMO v0.9.0 - Candidate Metadata, Hall Display and My Viva Board
+
+INSTALL (from v0.8.5)
+1. Back up the database and project files.
+2. Extract this ZIP into the project root and replace the matching files.
+3. Run: php artisan migrate --force
+4. Run: php artisan optimize:clear
+5. Reload the existing display once to load the new JavaScript/CSS.
+Compiled Vite assets are included; npm build is not needed when applying this ZIP.
+The fixed README is unchanged. Existing boards and candidates are retained.
+
+CANDIDATE IMPORT
+Download the updated sample or blank template. Column order:
+post_code, post_name, unit, ministry, vdate, board, reg, name
+Unit, ministry and candidate name may be blank; retain the column headers.
+Unit/ministry are free-text board metadata, not links to the Administration unit master.
+All rows for a date/post code must use consistent post name, unit and ministry.
+Existing non-blank imported metadata must match. Assigned board data stays protected.
+Staging, validation, confirmation and leading-zero preservation remain in effect.
+Old six-column templates should be replaced with the new sample.
+Unit/ministry appear when present in the display, member page and downloaded reports.
+
+HALL DISPLAY
+Sign in with the existing separate display credentials, select the viva date,
+and click Full Screen (or use F11) once. Default mode is automatic, not paused.
+One board appears at a time, grouped in numeric post-code/board order.
+Each slide shows the post, board, member/location and large registration numbers.
+Long candidate lists split into as many slides as needed for the viewport.
+Slides rotate every 15 seconds; the counter states which slice of registrations is visible.
+The feed checks for updates every 5 seconds without a browser refresh.
+A changed feed preserves the current slide and rotation deadline where possible.
+Previous/Next/Pause are optional operator controls; navigation requires no interaction.
+Resizing/fullscreen recalculates the number of registrations per slide.
+The unfiltered page follows today's Bangladesh date automatically; a selected date stays fixed.
+A connection warning preserves the last known slides and retries automatically.
+Existing protected-display login/session expiry and password-change revocation still apply.
+If the display session expires, data is cleared and a sign-in link appears.
+
+MEMBER ACCESS
+Dashboard -> Viva Board Distribution -> My Viva Board.
+Select a date (defaults to today in Bangladesh) to see only your assigned board.
+The on-screen candidate table has 50 rows per page.
+Excel, PDF and the separate print view contain the full assigned candidate list.
+PDF has repeating table headers, page numbering and Bengali font support.
+Every member view/export resolves the current authenticated user's assignment in SQL.
+Client-supplied user/board/assignment IDs cannot select another user's data.
+Members cannot open overall Board Overview, reports, pools, import or settings routes.
+Chairman and Administrator permissions remain unchanged.
+
+VALIDATION
+Full Laravel suite: 164 tests, 1653 assertions passed.
+Node slide-planning suite: 3 tests passed.
+Additional DOM/timer checks: complete candidate coverage, escaped content, controls,
+position/pause retention, automatic rotation during repeated changed feeds,
+ETag/304 polling and expired-session data clearing passed.
+Production Vite build passed. Multi-page PDF rendered and visually checked.
+A live browser/projector visual check could not be completed in the build environment:
+the preview browser could not connect to the local QA server. Check the hall projector
+resolution once after installation; no automated/manual scrolling is required by the design.

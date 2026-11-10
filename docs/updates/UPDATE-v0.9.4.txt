@@ -1,0 +1,41 @@
+BPSC CMO v0.9.4 - Interactive Viva Cleanup Menu
+
+INSTALL
+Apply after v0.9.3. Extract into the project root and replace matching files.
+Run: php artisan optimize:clear
+No migration, Composer install or frontend build is needed. README is unchanged.
+
+USAGE
+php artisan cmo:viva-clear
+
+Select an option by number:
+0 - Cancel (no changes) [default]
+1 - Member pools only
+2 - Board distributions only
+3 - Candidate imports and their board distributions
+4 - All Viva operational data
+
+After selection, the command shows the target database, affected tables and counts,
+then requests the existing final yes/no confirmation (default No).
+Selecting a category alone does not delete any data.
+Choosing 0 or pressing Enter at the menu cancels immediately.
+Declining the final confirmation also leaves all data unchanged.
+The menu uses the existing Windows-compatible numeric question without autocomplete.
+
+Direct scope commands still work and require the final confirmation:
+php artisan cmo:viva-clear pools
+php artisan cmo:viva-clear distributions
+php artisan cmo:viva-clear candidates
+php artisan cmo:viva-clear all
+
+--no-interaction is refused with or without a scope.
+Deletion scope, dependencies, transaction rollback and audit logging are unchanged.
+See UPDATE-v0.9.2.txt for details. Back up first; run during a maintenance window.
+Candidate cleanup also removes imported board groups and their assignments.
+Users, Viva settings/display credentials, Expert Evaluation data and existing logs remain.
+
+VALIDATION
+Full Laravel suite: 180 tests / 1788 assertions passed.
+Added coverage for all four menu choices, menu cancellation, final confirmation
+cancellation, and refusing a bare noninteractive invocation.
+Terminal smoke check displayed the numeric menu and cancelled without deletion.

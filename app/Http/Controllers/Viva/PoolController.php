@@ -19,12 +19,12 @@ class PoolController extends Controller
 
     public function create(Workspace $workspace)
     {
-        return view('viva.pools.form', ['pool' => new VivaPool(['is_active' => true]), 'members' => $workspace->eligible()->get(), 'selected' => []]);
+        return view('viva.pools.form', ['pool' => new VivaPool(['is_active' => true]), 'members' => $workspace->orderedMembers($workspace->eligible()->get()), 'selected' => []]);
     }
 
     public function edit(VivaPool $pool, Workspace $workspace)
     {
-        return view('viva.pools.form', ['pool' => $pool, 'members' => $workspace->eligible()->get(), 'selected' => $pool->users()->pluck('users.id')->all()]);
+        return view('viva.pools.form', ['pool' => $pool, 'members' => $workspace->orderedMembers($workspace->eligible()->get()), 'selected' => $pool->users()->pluck('users.id')->all()]);
     }
 
     public function store(Request $r, Workspace $workspace)
@@ -80,6 +80,6 @@ class PoolController extends Controller
             app(Audit::class)->record('viva.pool.removed', ['pool_id' => $pool->id, 'name' => $pool->name]);
         });
 
-        return redirect()->route('viva.pools.index')->with('success','Pool removed. Existing board assignments are retained.');
+        return redirect()->route('viva.pools.index')->with('success', 'Pool removed. Existing board assignments are retained.');
     }
 }

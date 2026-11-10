@@ -1,4 +1,4 @@
-# Viva Board Distribution — v0.8.0
+# Viva Board Distribution — v0.8.5
 
 Expert Evaluation System is considered complete for the current scope. Viva Board
 Distribution is an independent module, accessible from its own Dashboard card.
@@ -34,6 +34,11 @@ Create, edit/deactivate or remove a pool. Populate it with all active Members, a
 active Chairmen, both roles, or specific eligible users. The member list is searchable;
 edit the selected users to add or remove people. “All” captures users at save time;
 new accounts are not silently enrolled later.
+
+Pool and assignment lists show Chairmen first (by name), then Members with numeric
+Member Numbers in ascending numeric order (`2`, `03`, `10`). Blank/non-numeric
+Member Numbers follow, ordered by name. Names break equal-number ties. Sorting
+does not alter stored numbers or remove leading zeroes.
 
 Only active, non-deleted Member/Chairman users in an active pool can be assigned.
 Inactive users or changed roles become ineligible immediately. Pool removal is soft:
@@ -83,9 +88,11 @@ import list with confirmation. Import confirmation redirects to the first import
 1. Select **Viva Date**, the imported **Post Code / Name**, and a **Member Pool**.
 2. Load boards. Groups are detected from candidate data for that exact date/post.
 3. Select the unassigned boards to distribute.
-4. For **Specific assignment**, choose a different available member for each board.
-5. For **Random assignment**, pick exactly as many different available members as
-   selected groups. The system randomly permutes those members onto the selected boards.
+4. **Random assignment** is first and selected by default. Pick exactly as many
+   different available members as selected groups. The system randomly permutes
+   those members onto the selected boards.
+5. Alternatively, choose **Specific assignment** and select a different available
+   member for each board.
 6. Confirm distribution. All candidates in each selected group belong to its assigned
    member; candidates are never individually scattered across members.
 7. Repeat for other post codes on that date. Previously assigned members are excluded

@@ -25,14 +25,14 @@ class ReportController extends Controller
         $book = new Spreadsheet;
         $summary = $book->getActiveSheet()->setTitle('Boards');
         $candidates = $book->createSheet()->setTitle('Candidates');
-        $rows = [['Viva Date', 'Post Code', 'Post Name', 'Board', 'Assigned Member', 'Member Number', 'Floor', 'Room Number', 'Lift Button Number', 'Name of PO', 'Candidates', 'Assigned At (BST)']];
-        $candidateRows = [['Viva Date', 'Post Code', 'Post Name', 'Board', 'Registration', 'Candidate Name', 'Assigned Member']];
+        $rows = [['Viva Date', 'Post Code', 'Post Name', 'Unit', 'Ministry', 'Board', 'Assigned Member', 'Member Number', 'Floor', 'Room Number', 'Lift Button Number', 'Name of PO', 'Candidates', 'Assigned At (BST)']];
+        $candidateRows = [['Viva Date', 'Post Code', 'Post Name', 'Unit', 'Ministry', 'Board', 'Registration', 'Candidate Name', 'Assigned Member']];
         foreach ($boards as $b) {
             $a = $b->assignment;
             $member = $a ? ($a->member ? $workspace->member($a->member) : $a->member_snapshot) : [];
-            $rows[] = [$d['vdate'], $b->post_code, $b->post_name, $b->board, $member['name'] ?? 'Unassigned', $member['member_number'] ?? '', $member['floor'] ?? '', $member['room_number'] ?? '', $member['lift_button_number'] ?? '', $member['name_of_po'] ?? '', $b->candidates_count, $a?->created_at?->timezone('Asia/Dhaka')->format('Y-m-d H:i:s') ?? ''];
+            $rows[] = [$d['vdate'], $b->post_code, $b->post_name, $b->unit, $b->ministry, $b->board, $member['name'] ?? 'Unassigned', $member['member_number'] ?? '', $member['floor'] ?? '', $member['room_number'] ?? '', $member['lift_button_number'] ?? '', $member['name_of_po'] ?? '', $b->candidates_count, $a?->created_at?->timezone('Asia/Dhaka')->format('Y-m-d H:i:s') ?? ''];
             foreach ($b->candidates()->orderBy('reg')->cursor() as $candidate) {
-                $candidateRows[] = [$d['vdate'], $b->post_code, $b->post_name, $b->board, $candidate->reg, $candidate->name, $member['name'] ?? 'Unassigned'];
+                $candidateRows[] = [$d['vdate'], $b->post_code, $b->post_name, $b->unit, $b->ministry, $b->board, $candidate->reg, $candidate->name, $member['name'] ?? 'Unassigned'];
             }
         }
         foreach ([[$summary, $rows], [$candidates, $candidateRows]] as [$sheet,$data]) {

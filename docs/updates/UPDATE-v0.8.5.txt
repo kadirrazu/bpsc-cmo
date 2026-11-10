@@ -1,0 +1,26 @@
+BPSC CMO v0.8.5 - Random-first distribution and modern selection controls
+
+Changes
+- Random assignment is the first and default mode. Specific assignment follows.
+  An explicit Specific choice is retained after validation errors.
+- Mode choices use bordered radio cards with selected/focus states.
+- Board and random-member checkboxes have larger click targets, rounded styling,
+  clear checked-state highlights and keyboard-focus indicators.
+- The additional "You do not need to assign all boards at the opening time"
+  sentence is shown only to users entitled to distribute (Chairman).
+- Administrator retains read-only board overview and cannot submit assignments.
+  Existing time, pool eligibility and one-member-per-day constraints are unchanged.
+
+Apply
+Extract into the project root and replace matching files, then run:
+php artisan optimize:clear
+
+Built frontend assets are included. No npm build, package installation or
+new database migration is required. Fixed README remains unchanged.
+
+Validation
+Full PHP suite: 161 tests passed, 1,591 assertions. Production frontend build passed.
+UI checks cover Random-first/default state, retained Specific selection,
+Chairman-only guidance and continued Administrator assignment denial.
+Existing JavaScript initialization is checked for Random mode and switching
+back to Specific mode (mapping requirements and member checkbox availability).

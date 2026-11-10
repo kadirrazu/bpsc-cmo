@@ -2,20 +2,25 @@
 
 use App\Http\Controllers\Viva\BoardController;
 use App\Http\Controllers\Viva\CandidateImportController;
+use App\Http\Controllers\Viva\CandidateReportController;
+use App\Http\Controllers\Viva\MyBoardController;
 use App\Http\Controllers\Viva\PoolController;
 use App\Http\Controllers\Viva\ReportController;
 use App\Http\Controllers\Viva\SettingsController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('modules/viva')->name('viva.')->middleware('can:access-viva')->group(function () {
-    Route::get('/', fn () => redirect()->route(auth()->user()->can('manage-viva-pools') ? 'viva.pools.index' : 'viva.imports.index'))->name('home');
+    Route::get('/', fn () => redirect()->route(auth()->user()->can('view-own-viva-board') ? 'viva.my-board.index' : (auth()->user()->can('manage-viva-pools') ? 'viva.pools.index' : 'viva.imports.index')))->name('home');
     Route::resource('pools', PoolController::class)->except('show')->middleware('can:manage-viva-pools');
-    Route::get('/boards', [BoardController::class, 'index'])->name('boards.index');
+    Route::get('/boards', [BoardController::class, 'index'])->middleware('can:view-viva-distributions')->name('boards.index');
     Route::post('/boards', [BoardController::class, 'store'])->middleware('can:distribute-viva')->name('boards.store');
     Route::delete('/assignments/{assignment}', [BoardController::class, 'destroy'])->middleware('can:distribute-viva')->name('assignments.destroy');
-    Route::get('/report', ReportController::class)->name('report');
+    Route::get('/report', ReportController::class)->middleware('can:view-viva-distributions')->name('report');
+    Route::get('/my-board', [MyBoardController::class, 'index'])->middleware('can:view-own-viva-board')->name('my-board.index');
+    Route::get('/my-board/download', [MyBoardController::class, 'download'])->middleware('can:view-own-viva-board')->name('my-board.download');
     Route::middleware('can:manage-system')->group(function () {
         Route::get('/candidates', [CandidateImportController::class, 'index'])->name('imports.index');
+        Route::get('/candidates/report', CandidateReportController::class)->name('imports.report');
         Route::get('/candidates/sample', [CandidateImportController::class, 'sample'])->name('imports.sample');
         Route::post('/candidates/stage', [CandidateImportController::class, 'stage'])->middleware('throttle:10,1')->name('imports.stage');
         Route::get('/candidates/previews/{batch}', [CandidateImportController::class, 'preview'])->name('imports.preview');

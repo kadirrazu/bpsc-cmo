@@ -1,0 +1,25 @@
+BPSC CMO v0.8.2 - Clarify distribution opening time
+
+09:30 AM BST is an opening threshold, not an appointment or deadline.
+Once that time is reached, Chairman can distribute still-unassigned boards later
+on the selected viva day, for example at 10:15 AM or 04:45 PM. The configured
+opening time and one-board-per-member-per-date constraints continue to apply.
+
+The existing server-side rule already permits this. No timing restriction has
+been added or removed. The misleading "The opening time has passed" message
+is replaced with "Distribution is open" and an explanation that pending boards
+may be assigned at any time from the opening time onward. Before opening, the
+page states when assignment will become available.
+
+Apply
+Extract into the project root and replace matching files, then run:
+php artisan optimize:clear
+
+No database migration, package installation or frontend build is required.
+Fixed README remains unchanged.
+
+Validation
+Full PHP suite: 158 tests passed, 1,567 assertions. The new regression scenario
+successfully assigns one board at 10:15 AM BST and another pending board at
+04:45 PM BST on the same day, to different eligible members. Existing tests
+continue to reject assignment before opening and on a future viva day.

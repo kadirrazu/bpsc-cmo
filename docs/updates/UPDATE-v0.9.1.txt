@@ -1,0 +1,20 @@
+BPSC CMO v0.9.1 - Readable Hall Display Member Panel
+
+Apply after v0.9.0: extract this ZIP into the project root and replace matching files.
+Run php artisan optimize:clear, then reload the hall display once (Ctrl+F5).
+No database migration or npm build is required; compiled assets are included.
+
+- Unit and Ministry appear ABOVE Post Name when provided.
+- Unit text uses blue; Ministry text uses purple, with clear labels.
+- Post Name and Member Name have separate labelled sections.
+- Member identity appears in a white card with a teal accent and stronger typography.
+- Member Number, Floor, Room Number, Lift Button Number and Name of PO use aligned
+  label/value rows with separators. Location values have stronger visual emphasis.
+- Blank optional fields are omitted; zero-valued room/floor details are retained.
+- Existing viewport fitting, automatic slides, registration layout and polling remain active.
+- README remains unchanged.
+
+Validation: full Laravel suite 164 tests / 1653 assertions passed; Node slide suite
+3 tests passed; DOM checks passed for field order, labels, optional sections,
+leading zeroes, safe text rendering, rotation and refresh behaviour.
+Production Vite build passed. Actual projector visual verification remains local.

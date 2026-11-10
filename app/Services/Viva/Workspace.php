@@ -2,12 +2,14 @@
 
 namespace App\Services\Viva;
 
+use App\Enums\UserRole;
 use App\Models\User;
 use App\Models\VivaAssignment;
 use App\Models\VivaBoard;
 use App\Models\VivaCandidate;
 use App\Models\VivaSetting;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -28,6 +30,42 @@ class Workspace
     public function eligible()
     {
         return User::with('designation')->where('is_active', true)->whereIn('role', ['member', 'chairman'])->orderBy('name')->orderBy('id');
+    }
+
+    public function orderedMembers(Collection $members): Collection
+    {
+        $number = static function ($value): ?string {
+            $value = trim((string) $value);
+            if (! preg_match('/^[0-9]+$/D', $value)) {
+                return null;
+            }
+
+            return ltrim($value, '0') ?: '0';
+        };
+
+        return $members->sort(function (User $a, User $b) use ($number): int {
+            $aChairman = $a->role === UserRole::Chairman;
+            $bChairman = $b->role === UserRole::Chairman;
+            if ($aChairman !== $bChairman) {
+                return $aChairman ? -1 : 1;
+            }
+            if (! $aChairman) {
+                $aNumber = $number($a->member_number);
+                $bNumber = $number($b->member_number);
+                if (($aNumber === null) !== ($bNumber === null)) {
+                    return $aNumber === null ? 1 : -1;
+                }
+                if ($aNumber !== null && $bNumber !== null) {
+                    // Compare integer strings without overflow or losing leading-zero data.
+                    $comparison = (strlen($aNumber) <=> strlen($bNumber)) ?: strcmp($aNumber, $bNumber);
+                    if ($comparison !== 0) {
+                        return $comparison;
+                    }
+                }
+            }
+
+            return strcasecmp($a->name, $b->name) ?: strcmp($a->name, $b->name) ?: ($a->id <=> $b->id);
+        })->values();
     }
 
     public function member(User $user): array

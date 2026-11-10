@@ -1,0 +1,14 @@
+BPSC CMO v0.8.3 - Center live display update labels
+
+Live Board Updates and its Updated timestamp are centered on the same axis.
+The status dot/title row also uses centered flex alignment, including mobile.
+Existing Bootstrap utility classes are reused; automatic refresh keeps this
+alignment because the timestamp inherits its parent's text alignment.
+
+Apply
+Extract into the project root and replace matching files, then run:
+php artisan optimize:clear
+
+No database migration or frontend build is needed. Fixed README is unchanged.
+Full PHP suite: 158 tests passed, 1,567 assertions.
+Compiled center-alignment utilities also verified, including their mobile override priority.

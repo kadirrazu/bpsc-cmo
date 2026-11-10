@@ -21,11 +21,13 @@ class CandidateImportController extends Controller
 {
     public function index(Request $r, Workspace $workspace)
     {
-        $r->validate(['vdate' => 'nullable|date_format:Y-m-d']);
+        $r->validate(['vdate' => 'nullable|date_format:Y-m-d', 'post_code' => 'nullable|string|max:20']);
         $date = $workspace->date($r->input('vdate'));
-        $boards = VivaBoard::withCount('candidates')->with('assignment')->where('vdate', $date)->orderBy('post_code')->orderBy('board')->paginate(20)->withQueryString();
+        $post = $r->input('post_code');
+        $posts = VivaBoard::where('vdate', $date)->orderBy('post_code')->get(['post_code', 'post_name'])->uniqueStrict('post_code');
+        $boards = VivaBoard::withCount('candidates')->with('assignment')->where('vdate', $date)->when($post, fn ($q) => $q->where('post_code', $post))->orderBy('post_code')->orderByRaw('length(board)')->orderBy('board')->paginate(20)->withQueryString();
 
-        return view('viva.imports.index', compact('date', 'boards'));
+        return view('viva.imports.index', compact('date', 'boards', 'post', 'posts'));
     }
 
     public function sample(Request $r, CandidateWorkbook $workbooks)

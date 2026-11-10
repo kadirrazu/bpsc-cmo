@@ -1,0 +1,26 @@
+BPSC CMO v0.8.1 - Dashboard and Viva UI polish
+
+Changes
+- Module card bodies use a vertical flex layout; Open Module buttons sit at the
+  bottom with consistent alignment despite different description lengths.
+- Viva navigation highlights the current route only. Candidate Import also
+  stays active on its preview routes; Board Overview and Settings have their
+  own active state. Active links include aria-current for accessibility.
+- Display Password and Confirm Display Password have independent show/hide
+  buttons, reusing the existing password controls. Password values are not
+  prefilled. Existing masking on submission/page hiding is retained.
+
+Apply
+Extract into the project root and replace matching files, then run:
+php artisan optimize:clear
+
+No database migration, package installation or frontend rebuild is required.
+This template-only UI patch uses existing compiled styles/scripts.
+Fixed README remains unchanged.
+
+Validation
+Full PHP suite: 157 tests passed, 1,558 assertions.
+Rendered navigation verified for Candidate Import, import preview, Board Overview
+and Settings. Both card footer structures and password controls checked.
+JavaScript DOM verification checked independent show/hide, accessible state,
+password value preservation and masking on submission/page hiding.

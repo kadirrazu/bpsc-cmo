@@ -27,7 +27,9 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        Gate::define('access-viva', fn (User $u) => $u->is_active && in_array($u->role, [UserRole::Admin, UserRole::Chairman], true));
+        Gate::define('access-viva', fn (User $u) => $u->is_active && in_array($u->role, [UserRole::Admin, UserRole::Chairman, UserRole::Member], true));
+        Gate::define('view-viva-distributions', fn (User $u) => $u->is_active && in_array($u->role, [UserRole::Admin, UserRole::Chairman], true));
+        Gate::define('view-own-viva-board', fn (User $u) => $u->is_active && $u->role === UserRole::Member);
         Gate::define('manage-viva-pools', fn (User $u) => $u->is_active && $u->role === UserRole::Chairman);
         Gate::define('distribute-viva', fn (User $u) => $u->is_active && $u->role === UserRole::Chairman);
         Paginator::defaultView('shared.pagination');

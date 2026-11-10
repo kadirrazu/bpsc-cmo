@@ -26,6 +26,7 @@ class BoardController extends Controller
         $pool = isset($filters['pool_id']) ? $pools->firstWhere('id', (int) $filters['pool_id']) : null;
         $used = VivaAssignment::where('vdate', $date)->pluck('user_id')->all();
         $members = $pool ? $workspace->eligible()->whereHas('vivaPools', fn ($q) => $q->whereKey($pool->id))->whereNotIn('users.id', $used)->get() : collect();
+        $members = $workspace->orderedMembers($members);
         $boards = VivaBoard::withCount('candidates')->with('assignment.member')->where('vdate', $date)->when($post, fn ($q) => $q->where('post_code', $post))->orderByRaw('length(board)')->orderBy('board')->get();
         $opens = $workspace->opens($date);
         $open = now('Asia/Dhaka')->greaterThanOrEqualTo($opens);
@@ -57,6 +58,6 @@ class BoardController extends Controller
             $assignment->delete();
         });
 
-        return back()->with('success','Assignment removed. The board and member can now be assigned again.');
+        return back()->with('success', 'Assignment removed. The board and member can now be assigned again.');
     }
 }
