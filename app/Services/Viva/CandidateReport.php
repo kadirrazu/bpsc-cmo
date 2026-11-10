@@ -12,7 +12,7 @@ use Mpdf\Output\Destination;
 
 class CandidateReport
 {
-    public function pdf($boards, ?array $member = null): string
+    public function pdf($boards, ?array $member = null, array $membersByBoard = []): string
     {
         File::ensureDirectoryExists(storage_path('app/private/mpdf'), 0700);
         $config = (new ConfigVariables)->getDefaults();
@@ -31,7 +31,7 @@ class CandidateReport
         $pdf->SetHTMLFooter(view('viva.reports.footer')->render());
         foreach ($boards->values() as $index => $board) {
             $header = '<div style="font-size:8.5pt;color:#58645c;margin-bottom:6px">Bangladesh Public Service Commission (BPSC) | Chairman Office</div>'
-                .view('viva.reports.board-heading', ['board' => $board, 'pdf' => true, 'member' => $member])->render();
+                .view('viva.reports.board-heading', ['board' => $board, 'pdf' => true, 'member' => $membersByBoard[$board->id] ?? $member])->render();
             $pdf->SetHTMLHeader($header);
             if ($index > 0) {
                 $pdf->AddPage();

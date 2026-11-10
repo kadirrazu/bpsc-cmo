@@ -43,7 +43,7 @@ class ClearVivaDataCommandTest extends TestCase
         $this->fixture();
         $this->artisan('cmo:viva-clear unknown')->assertExitCode(2);
         $this->artisan('cmo:viva-clear all --no-interaction')->assertExitCode(1);
-        $this->artisan('cmo:viva-clear all')->expectsConfirmation(ClearVivaData::CONFIRMATION, 'no')->expectsOutput('Cancelled. No data was deleted.')->assertSuccessful();
+        $this->artisan('cmo:viva-clear all')->expectsQuestion(ClearVivaData::CONFIRMATION, 'no')->expectsOutput('Cancelled. No data was deleted.')->assertSuccessful();
         foreach (['viva_assignments', 'viva_candidates', 'viva_boards', 'viva_imports', 'viva_days'] as $table) {
             $this->assertDatabaseCount($table, 1);
         }
@@ -54,7 +54,7 @@ class ClearVivaDataCommandTest extends TestCase
     public function test_distribution_scope_only_clears_assignments(): void
     {
         $this->fixture();
-        $this->artisan('cmo:viva-clear distributions')->expectsConfirmation(ClearVivaData::CONFIRMATION, 'yes')->assertSuccessful();
+        $this->artisan('cmo:viva-clear distributions')->expectsQuestion(ClearVivaData::CONFIRMATION, 'DELETE')->assertSuccessful();
         $this->assertDatabaseCount('viva_assignments', 0);
         foreach (['viva_candidates', 'viva_boards', 'viva_imports'] as $table) {
             $this->assertDatabaseCount($table, 1);
@@ -66,7 +66,7 @@ class ClearVivaDataCommandTest extends TestCase
     public function test_pool_scope_removes_soft_deleted_pools_and_memberships_but_keeps_assigned_boards(): void
     {
         $this->fixture();
-        $this->artisan('cmo:viva-clear pools')->expectsConfirmation(ClearVivaData::CONFIRMATION, 'yes')->assertSuccessful();
+        $this->artisan('cmo:viva-clear pools')->expectsQuestion(ClearVivaData::CONFIRMATION, 'DELETE')->assertSuccessful();
         $this->assertDatabaseCount('viva_pools', 0);
         $this->assertDatabaseCount('viva_pool_user', 0);
         $this->assertDatabaseCount('viva_assignments', 1);
@@ -79,7 +79,7 @@ class ClearVivaDataCommandTest extends TestCase
     {
         $this->fixture();
         $settings = VivaSetting::firstOrFail()->getAttributes();
-        $this->artisan('cmo:viva-clear candidates')->expectsConfirmation(ClearVivaData::CONFIRMATION, 'yes')->assertSuccessful();
+        $this->artisan('cmo:viva-clear candidates')->expectsQuestion(ClearVivaData::CONFIRMATION, 'DELETE')->assertSuccessful();
         foreach (['viva_assignments', 'viva_candidates', 'viva_boards', 'viva_imports', 'viva_days'] as $table) {
             $this->assertDatabaseCount($table, 0);
         }
@@ -93,7 +93,7 @@ class ClearVivaDataCommandTest extends TestCase
         $this->fixture();
         $expert = Expert::create(['name' => 'Retained expert', 'type' => 'expert']);
         for ($i = 0; $i < 2; $i++) {
-            $this->artisan('cmo:viva-clear all')->expectsConfirmation(ClearVivaData::CONFIRMATION, 'yes')->assertSuccessful();
+            $this->artisan('cmo:viva-clear all')->expectsQuestion(ClearVivaData::CONFIRMATION, 'DELETE')->assertSuccessful();
         }
         foreach (['viva_assignments', 'viva_pool_user', 'viva_pools', 'viva_candidates', 'viva_boards', 'viva_imports', 'viva_days'] as $table) {
             $this->assertDatabaseCount($table, 0);
@@ -110,7 +110,7 @@ class ClearVivaDataCommandTest extends TestCase
         $this->fixture();
         $this->mock(Audit::class)->shouldReceive('record')->once()->andThrow(new \RuntimeException('Audit unavailable'));
         try {
-            $this->artisan('cmo:viva-clear all')->expectsConfirmation(ClearVivaData::CONFIRMATION, 'yes')->run();
+            $this->artisan('cmo:viva-clear all')->expectsQuestion(ClearVivaData::CONFIRMATION, 'DELETE')->run();
             $this->fail('Expected audit failure.');
         } catch (\RuntimeException $exception) {
             $this->assertSame('Audit unavailable', $exception->getMessage());
@@ -140,7 +140,7 @@ class ClearVivaDataCommandTest extends TestCase
         $before = DB::table($retained)->count();
         $this->artisan('cmo:viva-clear')
             ->expectsQuestion(ClearVivaData::MENU_QUESTION, $choice)
-            ->expectsConfirmation(ClearVivaData::CONFIRMATION, 'yes')
+            ->expectsQuestion(ClearVivaData::CONFIRMATION, 'DELETE')
             ->assertSuccessful();
         $this->assertDatabaseCount($cleared, 0);
         $this->assertDatabaseCount($retained, $before);
@@ -156,7 +156,7 @@ class ClearVivaDataCommandTest extends TestCase
             ->assertSuccessful();
         $this->artisan('cmo:viva-clear')
             ->expectsQuestion(ClearVivaData::MENU_QUESTION, 'All Viva operational data')
-            ->expectsConfirmation(ClearVivaData::CONFIRMATION, 'no')
+            ->expectsQuestion(ClearVivaData::CONFIRMATION, 'no')
             ->assertSuccessful();
         $this->assertDatabaseCount('viva_assignments', 1);
         $this->assertDatabaseCount('viva_pools', 2);
@@ -171,5 +171,16 @@ class ClearVivaDataCommandTest extends TestCase
         $this->artisan('cmo:viva-clear --no-interaction')->assertExitCode(1);
         $this->assertDatabaseCount('viva_assignments', 1);
         $this->assertDatabaseCount('viva_candidates', 1);
+    }
+
+    public function test_cleanup_requires_exact_uppercase_delete_not_yes_or_whitespace(): void
+    {
+        $this->fixture();
+        foreach (['yes', 'delete', 'DELETE ', ' DELETE', ''] as $confirmation) {
+            $this->artisan('cmo:viva-clear all')->expectsQuestion(ClearVivaData::CONFIRMATION, $confirmation)->assertSuccessful();
+            $this->assertDatabaseCount('viva_assignments', 1);
+            $this->assertDatabaseCount('viva_candidates', 1);
+            $this->assertDatabaseCount('viva_pools', 2);
+        }
     }
 }

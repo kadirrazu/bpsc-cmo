@@ -1,0 +1,54 @@
+BPSC CMO v0.9.9 - Candidate Removal Review Screens and Settings Alignment
+
+INSTALL
+Apply after v0.9.8. Extract into the project root and replace matching files.
+Run: php artisan optimize:clear
+No migration, Composer install or frontend build is required. README is unchanged.
+
+CLEAN CANDIDATE IMPORT LISTING
+Table rows now show only the Remove Board & Candidates action link, alongside the
+optional PDF action. Inline DELETE labels, confirmation textboxes and delete forms
+have been removed from this listing.
+The two bottom removal actions are grouped into a compact Candidate Data Removal
+card: Selected Date & Post, and All Imported Data.
+
+REVIEW -> CONFIRM -> REMOVE
+Every candidate listing removal action opens an Administrator-only confirmation
+screen. Opening the screen is read-only for candidate/board/assignment/import data.
+It displays the exact removal scope, current counts, warning and retention details.
+Type exactly DELETE, then click Confirm & Delete. Cancel/Back returns to Candidate
+Import without removal. The existing server-side DELETE validation remains in force.
+Single-board success now redirects to the filtered listing, rather than back to a
+confirmation URL for a board which no longer exists.
+
+Scope/date/post removal still includes all matching boards beyond pagination and
+retains other dates/posts. All-data removal explicitly shows all dates/posts even
+if the listing had filters. Its review includes import preview/batch counts, allowing
+staged imports to be cleared even when no committed boards exist.
+Counts are current estimates; final actions recheck conditions. An individually
+reviewed board which becomes assigned cannot subsequently be removed individually.
+Assigned-board protection, scoped preview invalidation, transactions, audits and
+strict Administrator-only permissions are unchanged.
+Other Viva removal workflows are unchanged by this listing-specific UI polish.
+
+ALIGNMENT CAUSE AND FIX
+The opening-time input's column included its helper paragraph. The row used
+align-items-end, so the button was bottom-aligned with the full input-plus-help
+column instead of the input itself. Tabler's normal input and button use matching
+padding and line-height; the helper paragraph caused the apparent height mismatch.
+The helper now sits outside the aligned input/action row and is linked back to the
+input with aria-describedby. No hardcoded spacer heights were introduced.
+The two download-setting forms now use equal-height flex columns and bottom-aligned
+save actions, so different description lengths do not shift their buttons.
+Other Viva filter action rows were checked; they do not contain this inline-help
+pattern. No global form sizing overrides were needed.
+
+VALIDATION
+Full Laravel suite: 200 tests / 2158 assertions passed.
+Node slide suite: 3 tests passed. PHP formatting passed.
+Added tests cover a clean listing, read-only review screens, all three removal scopes,
+exact final confirmation, filtered success redirect, assigned-state races, strict role
+restrictions, invalid/empty targets and removal of staged imports without boards.
+Rendered-settings DOM checks verified helper placement outside the control/action
+row, accessible help association and equal-height download form structure.
+No real user candidate data was removed while developing/testing this release.

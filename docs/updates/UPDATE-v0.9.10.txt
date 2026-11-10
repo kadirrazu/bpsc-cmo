@@ -1,0 +1,30 @@
+BPSC CMO v0.9.10 - Compact Member Pool Actions and Delete Review Screen
+
+INSTALL
+Apply after v0.9.9. Extract into the project root and replace matching files.
+Run: php artisan optimize:clear
+No migration, Composer install or frontend build is needed. README is unchanged.
+
+MEMBER POOLS - CHAIRMAN
+Pool cards now show three standard action links: Edit Pool, Use Pool and Delete.
+The inline DELETE field/form has been removed from each card.
+The previous tall form made the flex action row stretch the other links to its height.
+All actions now use matching button sizing with align-items-center and a small gap.
+Actions sit at the card's bottom; different description lengths do not shift their
+position between equal-height cards. Small screens can wrap buttons normally.
+
+DELETE WORKFLOW
+Delete opens a separate Chairman-only confirmation page showing the pool name,
+status, enrolled member count, description and existing assignment count.
+No pool or membership data is changed by viewing the page or selecting Cancel.
+Type exactly DELETE, then Confirm & Delete Pool to perform the existing pool removal.
+Existing assignments, candidates, user accounts and historical pool memberships
+remain intact. Pool soft-removal semantics and audit logging are unchanged.
+Administrator, Member, Staff and guests cannot access this new review endpoint.
+
+VALIDATION
+Full Laravel suite: 203 tests / 2206 assertions passed.
+Node slide suite: 3 tests passed. PHP style check passed.
+Tests cover clean card actions, read-only review/cancel, exact final DELETE,
+retained assignments/candidates/users/memberships and Chairman-only access.
+No real user pool data was deleted while developing/testing this release.

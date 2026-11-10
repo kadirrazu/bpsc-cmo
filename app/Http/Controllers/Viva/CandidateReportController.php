@@ -13,7 +13,7 @@ class CandidateReportController extends Controller
 {
     public function __invoke(Request $request, CandidateReport $report)
     {
-        $filters = $request->validate(['vdate' => 'required|date_format:Y-m-d', 'post_code' => 'nullable|string|max:20', 'board_id' => 'nullable|integer|min:1', 'format' => 'required|in:pdf,print']);
+        $filters = $request->validate(['vdate' => 'required|date_format:Y-m-d', 'post_code' => 'nullable|string|max:20', 'board_id' => 'nullable|integer|min:1', 'format' => 'required|in:pdf']);
         $boards = VivaBoard::withCount('candidates')->where('vdate', $filters['vdate'])
             ->when($filters['post_code'] ?? null, fn ($query, $code) => $query->where('post_code', $code))
             ->when($filters['board_id'] ?? null, fn ($query, $id) => $query->whereKey($id))
@@ -34,9 +34,6 @@ class CandidateReportController extends Controller
             })->values());
         }
         app(Audit::class)->record('viva.candidates.report.exported', ['filters' => $filters, 'boards' => $boards->count(), 'candidates' => $boards->sum('candidates_count')]);
-        if ($filters['format'] === 'print') {
-            return response()->view('viva.imports.report', ['boards' => $boards, 'pdf' => false]);
-        }
 
         return response($report->pdf($boards), 200, ['Content-Type' => 'application/pdf', 'Content-Disposition' => 'attachment; filename="viva-candidates-'.$filters['vdate'].'.pdf"']);
     }

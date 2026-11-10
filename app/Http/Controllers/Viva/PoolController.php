@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Viva;
 
 use App\Http\Controllers\Controller;
+use App\Models\VivaAssignment;
 use App\Models\VivaPool;
 use App\Services\Library\Audit;
 use App\Services\Viva\Workspace;
@@ -59,6 +60,9 @@ class PoolController extends Controller
                 throw ValidationException::withMessages(['member_ids' => 'Select active Member/Chairman users only. A pool needs at least one eligible member.']);
             }
             $before = $pool->exists ? $pool->users()->pluck('users.id')->all() : [];
+            if (array_diff($before, $ids)) {
+                $r->validate(['confirmation' => 'required|string|in:DELETE']);
+            }
             $pool->fill(array_intersect_key($d, array_flip(['name', 'description', 'is_active'])));
             if (! $pool->exists) {
                 $pool->created_by = $r->user()->id;
@@ -71,9 +75,17 @@ class PoolController extends Controller
         return redirect()->route('viva.pools.index')->with('success', 'Member pool saved.');
     }
 
+    public function removal(VivaPool $pool)
+    {
+        $pool->loadCount('users');
+        $assignmentCount = VivaAssignment::where('viva_pool_id', $pool->id)->count();
+
+        return view('viva.pools.removal', compact('pool', 'assignmentCount'));
+    }
+
     public function destroy(Request $r, VivaPool $pool)
     {
-        $r->validate(['confirmation' => 'required|in:REMOVE']);
+        $r->validate(['confirmation' => 'required|string|in:DELETE']);
         DB::transaction(function () use ($pool) {
             $pool = VivaPool::whereKey($pool->id)->lockForUpdate()->firstOrFail();
             $pool->delete();

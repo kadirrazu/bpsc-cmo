@@ -1,0 +1,51 @@
+BPSC CMO v0.9.6 - Live Display Controls and Protected Candidate PDF Downloads
+
+BASELINE / INSTALL
+Built from project-refrence-cmo-10-11-2026-05-20-PM-OFFICE.zip (v0.9.5 reference).
+1. Back up the project and database.
+2. Extract into the project root and replace matching files.
+3. Run: php artisan migrate --force
+4. Run: php artisan optimize:clear
+5. Reload the live display once with Ctrl+F5 to load the new compiled assets.
+The fixed README is unchanged. Compiled Vite assets are included.
+
+LIVE DISPLAY
+Previous / Pause / Next and the slide counter are hidden until assigned boards exist.
+Controls update automatically when the first board is assigned or the final board is
+removed. They are also hidden when the display session expires or the date rolls over.
+Buttons have Bootstrap icons, rounded styling and a small vertical gap from the board.
+Pause / Resume keeps its matching pause/play icon and accessible pressed state.
+Existing automatic rotation, polling and viewport sizing remain in effect.
+
+CANDIDATE PDF RELEASE CONTROL
+Administrator -> Viva Board Distribution -> Settings -> Candidate List Downloads.
+Enable candidate PDF downloads, then Save Download Setting.
+Default is OFF, including after upgrading an existing installation.
+This separate form can be saved without configuring/changing display credentials.
+Only Administrator can change it; every change is audited.
+It applies to both Administrator candidate-board PDFs and Member own-board PDFs.
+When disabled, download links are hidden and direct HTTP download requests return 403.
+Changing it takes effect on the next download request without signing users out.
+Disabling it does not delete candidate data, assignments or existing saved PDFs.
+
+PDF ONLY
+Candidate Print and Excel download options are removed.
+Old candidate print/xlsx URLs cannot generate a report, even when downloads are enabled.
+Enabled downloads retain the existing A4 PDF layout, footer, board grouping and privacy.
+Members remain limited to their own assigned board; other roles' permissions are unchanged.
+Existing candidate views and the protected hall display remain available as before.
+
+OTHER REPORTS
+The Chairman/Administrator distribution Excel report retains its Boards summary sheet.
+The old Candidates sheet (registrations/names) has been removed to prevent bypassing
+PDF release control through the distribution workbook. Aggregate counts are retained.
+The sample/blank import templates remain downloadable; these contain no stored candidates.
+
+VALIDATION
+Full Laravel suite: 182 tests / 1859 assertions passed.
+Node slide-planning suite: 3 tests passed. Production Vite build passed.
+DOM checks: empty/assigned/removed/reassigned controls, icons, pause/resume state,
+next slide, live feed updates and expired-session hiding passed.
+Server tests cover default-off behaviour, Administrator-only changes, invalid values,
+independent credential settings, audit, direct-URL denial, on/off changes, PDF-only
+formats, own-board isolation and exclusion of candidate records from summary Excel.

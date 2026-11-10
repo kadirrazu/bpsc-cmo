@@ -1,0 +1,46 @@
+BPSC CMO v0.9.11 - Member Own-board PDF and Tabular Board Metadata
+
+INSTALL
+Apply after v0.9.10. Extract into the project root and replace matching files.
+Run: php artisan optimize:clear
+No migration, Composer install or frontend build is needed. README is unchanged.
+
+MEMBER PDF RESTORED
+Member -> Viva Board Distribution -> My Viva Board -> select a date.
+If an assignment exists, Download Candidate List (PDF) appears in the board card header.
+The complete assigned candidate list is exported, not only the current 50-row page.
+No assignment means no PDF button, and a direct download request returns 404.
+Only PDF is supported; old Excel/print format requests remain unavailable.
+
+The Member download route no longer uses the Administrator-only candidate-release gate.
+A Member's own assigned-board PDF works independently of both release switches.
+Administrator candidate PDFs and Chairman distribution reports keep their existing,
+separate settings/permissions. This change does not grant Members either of those
+report endpoints or access to another member's board.
+The controller scopes the assignment by authenticated user/date, ignores client user/
+board/assignment IDs for selection, and the PDF service also rechecks ownership,
+active Member role and selected date.
+
+PDF FORMAT
+Uses the same existing CandidateReport renderer as Administrator/Chairman reports:
+A4 portrait; compact tabular heading; Member/location data when provided;
+SL, Registration, Name and blank Remarks/Notes; name left aligned and other candidate
+columns centred; Chairman Office, BPSC footer left, Page X of Y right with separator.
+Registration zeroes are preserved. Numeric ordering uses string magnitude comparison,
+without integer/float conversion. Large lists continue with repeated headers.
+
+MY VIVA BOARD METADATA
+The information above the candidate table now uses a responsive tabular card:
+Date (blue badge), Board (teal badge), Post Code, Candidate Count, Post Name,
+optional Unit (purple badge) and optional Ministry.
+The PDF button is in the card header. Long post/ministry text has a full-width value row.
+Blank optional fields remain hidden. Existing date filtering and pagination remain.
+
+VALIDATION
+Full Laravel suite: 206 tests / 2251 assertions passed.
+Node slide suite: 3 tests passed. PHP style check passed.
+Coverage includes both release switches OFF, forged board/user IDs, own-board scope,
+other-role denial, no-assignment state, PDF-only formats, service ownership guard,
+complete candidate pagination coverage and exact registration ordering/zeroes.
+Rendered Member PDF checked for A4 dimensions, Bengali name, layout and footer.
+Rendered metadata DOM checked for the table and date/board/unit emphasis classes.

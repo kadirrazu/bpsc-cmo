@@ -16,7 +16,7 @@ class ClearVivaData extends Command
 
     public const MENU_QUESTION = 'What would you like to clear?';
 
-    public const CONFIRMATION = 'Permanently delete the Viva data listed above?';
+    public const CONFIRMATION = 'Type DELETE to permanently delete the Viva data listed above';
 
     public function handle(Workspace $workspace, Audit $audit): int
     {
@@ -64,7 +64,7 @@ class ClearVivaData extends Command
         }
         $this->line('Users, Expert Evaluation data, Viva settings/display credentials and existing audit logs are retained.');
         $this->table(['Table to clear', 'Current rows'], array_map(fn ($table) => [$table, DB::table($table)->count()], $tables));
-        if (! $this->confirm(self::CONFIRMATION, false)) {
+        if ($this->ask(self::CONFIRMATION) !== 'DELETE') {
             $this->info('Cancelled. No data was deleted.');
 
             return self::SUCCESS;

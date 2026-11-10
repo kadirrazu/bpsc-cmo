@@ -9,6 +9,7 @@ use App\Models\Question;
 use App\Models\Survey;
 use App\Models\Unit;
 use App\Models\User;
+use App\Models\VivaSetting;
 use App\Observers\LibraryObserver;
 use App\Services\Library\Audit;
 use Illuminate\Auth\Events\Failed;
@@ -27,6 +28,9 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        Gate::define('download-viva-candidates', fn (User $u) => $u->is_active && $u->role === UserRole::Admin && (bool) VivaSetting::whereKey(1)->value('candidate_downloads_enabled'));
+        Gate::define('download-viva-distributions', fn (User $u) => $u->is_active && $u->role === UserRole::Chairman && (bool) VivaSetting::whereKey(1)->value('distribution_downloads_enabled'));
+        Gate::define('download-viva-summary', fn (User $u) => $u->is_active && ($u->role === UserRole::Admin || ($u->role === UserRole::Chairman && (bool) VivaSetting::whereKey(1)->value('distribution_downloads_enabled'))));
         Gate::define('access-viva', fn (User $u) => $u->is_active && in_array($u->role, [UserRole::Admin, UserRole::Chairman, UserRole::Member], true));
         Gate::define('view-viva-distributions', fn (User $u) => $u->is_active && in_array($u->role, [UserRole::Admin, UserRole::Chairman], true));
         Gate::define('view-own-viva-board', fn (User $u) => $u->is_active && $u->role === UserRole::Member);

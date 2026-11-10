@@ -1,0 +1,53 @@
+BPSC CMO v0.9.8 - Remove Candidates for a Selected Date and Post
+
+INSTALL
+Apply after v0.9.7. Extract into the project root and replace matching files.
+Run: php artisan optimize:clear
+No migration, Composer install or frontend build is needed. README is unchanged.
+
+FINDING
+The previous version supported removing a single unassigned board or removing all
+imported data across all dates/posts. Its Date/Post listing filters did not narrow
+the Remove All action. A separate scoped removal action has now been added.
+
+USAGE - ADMINISTRATOR ONLY
+Viva Board Distribution -> Candidate Import.
+1. Choose Imported Viva Date and a specific Post Code / Name.
+2. Click View Boards.
+3. Find Remove Selected Date & Post below the board table.
+4. Check the displayed date, exact post code and board/candidate/assignment counts.
+5. Type exactly DELETE, then click Remove Selected Date & Post.
+
+Only imported boards matching BOTH the selected viva date AND exact post code are
+removed, including all their candidates and assignments. Matching boards on other
+pagination pages are included. Other dates/posts, pools, memberships, users, module
+settings and existing audit history are retained.
+Post codes remain strings: 001 is different from 1; code 0 is supported as well.
+No selected post, invalid date/code, no matching boards or incorrect confirmation
+cannot broaden the action to all data. The endpoint requires both scope fields.
+After removal, the selected date/post remains visible with a No imported records label.
+
+PENDING IMPORT PREVIEWS
+Pending previews containing the removed date/post are cancelled and their staged
+payload is cleared, preventing an old confirmation from restoring the deleted data.
+A preview containing several dates/posts is cancelled as a whole if it includes this
+selection; re-upload that workbook if still needed. Other pending previews remain.
+Existing same-day version validation may still require a fresh upload for a retained
+preview when underlying day data has changed. Applied import/audit history remains.
+
+SAFETY
+The new endpoint is strictly Administrator-only and requires literal uppercase DELETE
+without extra spaces. Cleanup runs in one transaction using the existing day mutex;
+errors within the transaction roll back candidates, boards, assignments and preview
+changes. A scoped audit record stores the date, post code and affected counts.
+Removal is permanent; back up before using it.
+The separate Remove All Imported Candidate Data option still covers all dates/posts.
+No real user dataset was removed during development/testing.
+
+VALIDATION
+Full Laravel suite: 195 tests / 2093 assertions passed.
+Node slide suite: 3 tests passed. PHP style check passed.
+Tests cover 21 matching boards across pagination, same-day other-post retention,
+same-post other-date retention, leading-zero/zero post codes, affected vs unrelated
+previews, stale-preview rejection, role restrictions, exact DELETE, missing/invalid
+scope, no-match behaviour and complete rollback on audit failure.

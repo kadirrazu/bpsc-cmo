@@ -8,7 +8,6 @@ use App\Services\Library\Audit;
 use App\Services\Viva\Workspace;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
-use Illuminate\Validation\ValidationException;
 use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -18,24 +17,18 @@ class ReportController extends Controller
     public function __invoke(Request $r, Workspace $workspace)
     {
         $d = $r->validate(['vdate' => 'required|date_format:Y-m-d', 'post_code' => 'nullable|string|max:20']);
-        $boards = VivaBoard::with('assignment.member')->withCount('candidates')->where('vdate', $d['vdate'])->when($d['post_code'] ?? null, fn ($q, $code) => $q->where('post_code', $code))->orderBy('post_code')->orderBy('board')->get();
-        if ($boards->sum('candidates_count') > 20000) {
-            throw ValidationException::withMessages(['report' => 'Download up to 20,000 candidates at once; select a single post code.']);
-        }
+        $boards = VivaBoard::with('assignment.member')->withCount('candidates')->where('vdate', $d['vdate'])->when(! $r->user()->can('manage-system'), fn ($q) => $q->whereHas('assignment'))->when($d['post_code'] ?? null, fn ($q, $code) => $q->where('post_code', $code))->orderBy('post_code')->orderBy('board')->get();
+        abort_if(! $r->user()->can('manage-system') && $boards->isEmpty(), 404, 'No distributed boards match these filters.');
         $book = new Spreadsheet;
         $summary = $book->getActiveSheet()->setTitle('Boards');
-        $candidates = $book->createSheet()->setTitle('Candidates');
         $rows = [['Viva Date', 'Post Code', 'Post Name', 'Unit', 'Ministry', 'Board', 'Assigned Member', 'Member Number', 'Floor', 'Room Number', 'Lift Button Number', 'Name of PO', 'Candidates', 'Assigned At (BST)']];
-        $candidateRows = [['Viva Date', 'Post Code', 'Post Name', 'Unit', 'Ministry', 'Board', 'Registration', 'Candidate Name', 'Assigned Member']];
         foreach ($boards as $b) {
             $a = $b->assignment;
             $member = $a ? ($a->member ? $workspace->member($a->member) : $a->member_snapshot) : [];
             $rows[] = [$d['vdate'], $b->post_code, $b->post_name, $b->unit, $b->ministry, $b->board, $member['name'] ?? 'Unassigned', $member['member_number'] ?? '', $member['floor'] ?? '', $member['room_number'] ?? '', $member['lift_button_number'] ?? '', $member['name_of_po'] ?? '', $b->candidates_count, $a?->created_at?->timezone('Asia/Dhaka')->format('Y-m-d H:i:s') ?? ''];
-            foreach ($b->candidates()->orderBy('reg')->cursor() as $candidate) {
-                $candidateRows[] = [$d['vdate'], $b->post_code, $b->post_name, $b->unit, $b->ministry, $b->board, $candidate->reg, $candidate->name, $member['name'] ?? 'Unassigned'];
-            }
+
         }
-        foreach ([[$summary, $rows], [$candidates, $candidateRows]] as [$sheet,$data]) {
+        foreach ([[$summary, $rows]] as [$sheet,$data]) {
             foreach ($data as $i => $row) {
                 foreach ($row as $j => $value) {
                     $sheet->setCellValueExplicit([$j + 1, $i + 1], (string) ($value ?? ''), DataType::TYPE_STRING);

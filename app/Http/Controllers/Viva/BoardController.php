@@ -49,7 +49,7 @@ class BoardController extends Controller
 
     public function destroy(Request $r, VivaAssignment $assignment, Workspace $workspace)
     {
-        $r->validate(['confirmation' => 'required|in:REMOVE', 'reason' => 'required|string|max:500']);
+        $r->validate(['confirmation' => 'required|string|in:DELETE', 'reason' => 'required|string|max:500']);
         DB::transaction(function () use ($r, $assignment, $workspace) {
             $workspace->lockDay($assignment->vdate->toDateString());
             $workspace->ensureOpen($assignment->vdate->toDateString());

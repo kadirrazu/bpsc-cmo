@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Models\User;
 use App\Models\VivaBoard;
 use App\Models\VivaCandidate;
+use App\Models\VivaSetting;
+use App\Services\Viva\CandidateReport;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -14,6 +16,7 @@ class VivaCandidateReportTest extends TestCase
 
     private function login(string $role = 'admin'): void
     {
+        VivaSetting::findOrFail(1)->update(['candidate_downloads_enabled' => true]);
         $user = User::factory()->create(['role' => $role]);
         $this->actingAs($user)->withSession(['auth_version' => $user->auth_version]);
     }
@@ -34,9 +37,16 @@ class VivaCandidateReportTest extends TestCase
         $long = '9999999999999999999999999999999999999999';
         $this->board('001', '01', ['0100', $long, '0002', '0010']);
         $this->board('002', '02', ['777777']);
-        $this->get(route('viva.imports.index', ['vdate' => '2026-11-10']))->assertOk()->assertSee('Download Board Lists (PDF)')->assertSee('Print Board Lists');
-        $this->get(route('viva.imports.report', ['vdate' => '2026-11-10', 'post_code' => '001', 'format' => 'print']))
-            ->assertOk()->assertSeeInOrder(['Unit 07', 'Ministry of Education', 'Post 001', 'Registration Number', 'Remarks / Notes', '>0002<', '>0010<', '>0100<', '>'.$long.'<'], false)->assertDontSee('777777');
+        $this->get(route('viva.imports.index', ['vdate' => '2026-11-10']))->assertOk()->assertSee('Download Board Lists (PDF)')->assertDontSee('Print Board Lists');
+        $this->mock(CandidateReport::class)->shouldReceive('pdf')->once()->withArgs(function ($boards) use ($long) {
+            $this->assertCount(1, $boards);
+            $this->assertSame('Unit 07', $boards->first()->unit);
+            $this->assertSame('Ministry of Education', $boards->first()->ministry);
+            $this->assertSame(['0002', '0010', '0100', $long], $boards->first()->candidates->pluck('reg')->all());
+
+            return true;
+        })->andReturn('%PDF-sorted-test');
+        $this->get(route('viva.imports.report', ['vdate' => '2026-11-10', 'post_code' => '001', 'format' => 'pdf']))->assertOk()->assertHeader('Content-Type', 'application/pdf');
         $this->assertDatabaseCount('viva_assignments', 0);
         $this->assertDatabaseHas('audit_logs', ['action' => 'viva.candidates.report.exported']);
         $this->get(route('viva.imports.index', ['vdate' => '2026-11-10', 'post_code' => '001']))->assertOk()->assertSee('Post 001')->assertDontSee('<strong>002</strong>', false);
@@ -50,7 +60,14 @@ class VivaCandidateReportTest extends TestCase
         $response = $this->get(route('viva.imports.report', ['vdate' => '2026-11-10', 'format' => 'pdf']))->assertOk()->assertHeader('Content-Type', 'application/pdf');
         $this->assertStringStartsWith('%PDF-', $response->getContent());
         $this->assertSame(2, preg_match_all('~/Type\s*/Page\b~', $response->getContent()));
-        $this->get(route('viva.imports.report', ['vdate' => '2026-11-10', 'board_id' => $a->id, 'format' => 'print']))->assertOk()->assertSee('>0002<', false)->assertDontSee('>0010<', false);
+        $this->mock(CandidateReport::class)->shouldReceive('pdf')->once()->withArgs(function ($boards) use ($a) {
+            $this->assertCount(1, $boards);
+            $this->assertSame($a->id, $boards->first()->id);
+            $this->assertSame(['0002'], $boards->first()->candidates->pluck('reg')->all());
+
+            return true;
+        })->andReturn('%PDF-filter-test');
+        $this->get(route('viva.imports.report', ['vdate' => '2026-11-10', 'board_id' => $a->id, 'format' => 'pdf']))->assertOk();
     }
 
     public function test_chairman_member_staff_and_guests_cannot_download_or_print_uploaded_candidate_reports(): void
@@ -72,6 +89,6 @@ class VivaCandidateReportTest extends TestCase
         $this->get(route('viva.imports.report', ['vdate' => 'invalid', 'format' => 'pdf']))->assertSessionHasErrors('vdate');
         $this->get(route('viva.imports.report', ['vdate' => '2026-11-10', 'format' => 'csv']))->assertSessionHasErrors('format');
         $this->get(route('viva.imports.report', ['vdate' => '2026-11-11', 'board_id' => $a->id, 'format' => 'pdf']))->assertNotFound();
-        $this->get(route('viva.imports.report', ['vdate' => '2026-11-10', 'post_code' => '999', 'format' => 'print']))->assertNotFound();
+        $this->get(route('viva.imports.report', ['vdate' => '2026-11-10', 'post_code' => '999', 'format' => 'pdf']))->assertNotFound();
     }
 }

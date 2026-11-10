@@ -1,0 +1,74 @@
+BPSC CMO v0.9.7 - Chairman Distribution Reports, Grouped Settings and Typed Removal
+
+INSTALL
+Apply after v0.9.6. Back up project/database, extract into the project root and replace.
+Run: php artisan migrate --force
+Run: php artisan optimize:clear
+No Composer install or frontend build is needed. README is unchanged.
+
+SETTINGS - ADMINISTRATOR ONLY
+Viva Settings has three ordered groups:
+1. Distribution Timing (opening time)
+2. Shared Display Access (independent hall-display username/password)
+3. Download Controls (at the bottom)
+Each form saves its own settings without overwriting the other groups.
+GET and every PUT settings endpoint remain strictly Administrator-only.
+
+DOWNLOAD CONTROLS
+Administrator Candidate Lists: existing candidate PDF switch, Administrator only.
+This feature is completely hidden while disabled; no disabled message/settings link
+is shown on Candidate Import or Member pages. Members cannot use this PDF feature,
+even if the Administrator candidate switch is enabled.
+
+Chairman Distribution Reports: new independent PDF/Excel switch, default OFF.
+Only Administrator can change it. When ON and boards have been assigned:
+- Chairman sees Distribution PDF/Excel (all assigned boards for the selected date).
+- This Post PDF/Excel narrows to the selected post code.
+- Each assigned row has PDF/Excel links for that single board.
+Distribution here means assigned boards for the selected date/post, not a new
+operation/batch ID. Reports are not limited by the table's on-screen pagination.
+Unassigned boards cannot be exported through these endpoints, including direct URLs.
+The new report endpoint is Chairman-only; Member/Staff/Administrator cannot use it.
+Disabling the switch blocks new direct requests immediately.
+Legacy Chairman summary Excel requests are also gated and limited to assigned boards.
+Administrator retains the existing non-candidate board-summary Excel report.
+
+PDF is A4 portrait, one board per section/page, using the existing compact header,
+Chairman Office footer and per-board assigned member/location details.
+Large boards continue on more pages with repeated header details.
+Excel contains Assignments and Candidates sheets. Registrations remain exact text,
+including leading zeroes; candidates sort by numeric magnitude without integer/float
+conversion. Remarks/Notes is blank for use as needed. Exports/settings are audited.
+
+REMOVAL - TYPE EXACTLY DELETE
+All manual Viva destructive actions now require uppercase DELETE:
+- Single imported board/candidate removal (still blocked once assigned).
+- New Remove All Imported Candidate Data at the bottom of Candidate Import.
+- Removing an assignment (existing reason/time checks remain).
+- Removing a member pool, or removing existing members while editing a pool.
+- Cancelling a staged import preview.
+- Interactive cmo:viva-clear cleanup (menu and direct scopes retained).
+Empty, yes, REMOVE, lowercase delete or values with extra spaces are not accepted.
+Forms never prefill the DELETE confirmation from previous input.
+Adding members/editing pool details does not require DELETE unless membership is removed.
+Existing non-Viva modules are outside this removal-confirmation change.
+
+BULK CANDIDATE REMOVAL
+Administrator-only action across ALL dates and post codes, regardless of current filters.
+Deletes all imported boards, candidates, their assignments and import previews/batches.
+The form explicitly describes this scope and requires DELETE before submission.
+Pools, memberships, users, module settings, other modules and existing audit history remain.
+Internal date mutex rows are retained for concurrent-operation safety.
+Cleanup runs in one transaction; errors within it roll back the changes.
+Deletion is permanent; take a backup before using this action.
+No real user dataset was removed while implementing/testing the feature.
+
+VALIDATION
+Full Laravel suite: 190 tests / 2015 assertions passed.
+Node slide suite: 3 tests passed; existing display-control DOM checks passed.
+Coverage includes all settings routes/roles, independent saving, default-off release,
+assigned-only/board/date filters, PDF/Excel generation, immediate disable, hidden
+candidate feature, exact DELETE (including whitespace rejection), bulk retention,
+transaction rollback, pool membership removal and staged-preview cancellation.
+Rendered a two-board A4 PDF with Bengali candidate names: each page's member and
+room match that board; headers, footer, registration zeroes and board separation checked.

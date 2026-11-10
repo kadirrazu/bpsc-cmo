@@ -20,7 +20,7 @@ class MyBoardController extends Controller
 
     public function download(Request $request, Workspace $workspace, MyBoardDownload $download)
     {
-        $request->validate(['format' => 'required|in:xlsx,pdf,print']);
+        $request->validate(['format' => 'required|in:pdf']);
         [$date, $assignment] = $this->ownBoard($request, $workspace);
         abort_unless($assignment, 404, 'No board has been assigned to you for this date.');
 

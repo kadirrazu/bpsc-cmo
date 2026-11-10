@@ -14,6 +14,6 @@ class VivaSetting extends Model
 
     protected function casts(): array
     {
-        return ['display_password' => 'hashed', 'auth_version' => 'integer'];
+        return ['display_password' => 'hashed', 'auth_version' => 'integer', 'candidate_downloads_enabled' => 'boolean', 'distribution_downloads_enabled' => 'boolean'];
     }
 }

@@ -1,0 +1,1 @@
+<label class="form-label mt-2" for="{{ $id }}">Type <strong>DELETE</strong> to confirm</label><input class="form-control form-control-sm mb-2" id="{{ $id }}" name="confirmation" type="text" maxlength="6" pattern="DELETE" autocomplete="off" spellcheck="false" @required($required??true) aria-label="Type DELETE to confirm removal">

@@ -14,6 +14,7 @@ use App\Models\VivaPool;
 use App\Models\VivaSetting;
 use App\Services\Transfer\ImportPlan;
 use App\Services\Transfer\Workbook;
+use App\Services\Viva\CandidateReport;
 use App\Services\Viva\CandidateWorkbook;
 use App\Services\Viva\DisplayData;
 use App\Services\Viva\Distribution;
@@ -160,10 +161,10 @@ class VivaBoardDistributionTest extends TestCase
         $this->post(route('viva.pools.store'), ['name' => 'Everyone', 'is_active' => 1, 'selection' => 'all_eligible'])->assertSessionHasNoErrors();
         $pool = VivaPool::firstOrFail();
         $this->assertSame(2, $pool->users()->count());
-        $this->put(route('viva.pools.update', $pool), ['name' => 'Selected', 'is_active' => 1, 'selection' => 'selected', 'member_ids' => [$member->id]])->assertSessionHasNoErrors();
+        $this->put(route('viva.pools.update', $pool), ['name' => 'Selected', 'confirmation' => 'DELETE', 'is_active' => 1, 'selection' => 'selected', 'member_ids' => [$member->id]])->assertSessionHasNoErrors();
         $this->assertSame([$member->id], $pool->users()->pluck('users.id')->all());
         $this->put(route('viva.pools.update', $pool), ['name' => 'Bad', 'is_active' => 1, 'selection' => 'selected', 'member_ids' => [$inactive->id]])->assertSessionHasErrors('member_ids');
-        $this->delete(route('viva.pools.destroy', $pool), ['confirmation' => 'REMOVE'])->assertRedirect();
+        $this->delete(route('viva.pools.destroy', $pool), ['confirmation' => 'DELETE'])->assertRedirect();
         $this->assertSoftDeleted($pool);
     }
 
@@ -237,7 +238,7 @@ class VivaBoardDistributionTest extends TestCase
         $batch = $this->stage([$this->row()]);
         $this->board();
         $this->post(route('viva.imports.confirm', $batch->id), ['confirmation' => 1])->assertSessionHasErrors('import');
-        $this->delete(route('viva.imports.cancel', $batch->id))->assertRedirect();
+        $this->delete(route('viva.imports.cancel', $batch->id), ['confirmation' => 'DELETE'])->assertRedirect();
         $this->assertDatabaseMissing('viva_imports', ['id' => $batch->id]);
     }
 
@@ -316,10 +317,10 @@ class VivaBoardDistributionTest extends TestCase
         $this->login(UserRole::Admin);
         $batch = $this->stage([$this->row(['reg' => '008'])]);
         $this->assertNotEmpty($batch->payload['plan']['errors']);
-        $this->delete(route('viva.imports.destroy', $board), ['confirmation' => 'REMOVE'])->assertSessionHasErrors('board');
+        $this->delete(route('viva.imports.destroy', $board), ['confirmation' => 'DELETE'])->assertSessionHasErrors('board');
         $this->actingAs($chair)->withSession(['auth_version' => $chair->auth_version]);
         $a = VivaAssignment::firstOrFail();
-        $this->delete(route('viva.assignments.destroy', $a), ['confirmation' => 'REMOVE', 'reason' => 'Correcting allocation'])->assertSessionHasNoErrors();
+        $this->delete(route('viva.assignments.destroy', $a), ['confirmation' => 'DELETE', 'reason' => 'Correcting allocation'])->assertSessionHasNoErrors();
         $this->assertDatabaseCount('viva_assignments', 0);
         $this->assertDatabaseHas('audit_logs', ['action' => 'viva.assignment.removed']);
     }
@@ -398,10 +399,12 @@ class VivaBoardDistributionTest extends TestCase
         $board = $this->board();
         $this->open();
         app(Distribution::class)->assign($this->data($pool, $board, $m), $chair);
+        VivaSetting::findOrFail(1)->update(['distribution_downloads_enabled' => true]);
         $response = $this->get(route('viva.report', ['vdate' => '2026-11-10']))->assertOk();
         $path = $response->baseResponse->getFile()->getPathname();
         $book = IOFactory::load($path);
-        $this->assertSame('00123456', $book->getSheetByName('Candidates')->getCell('G2')->getValue());
+        $this->assertNull($book->getSheetByName('Candidates'));
+        $this->assertSame(1, $book->getSheetCount());
         $this->assertSame('01', $book->getSheetByName('Boards')->getCell('F2')->getValue());
         $this->assertSame('501', $book->getSheetByName('Boards')->getCell('J2')->getValue());
         $book->disconnectWorksheets();
@@ -655,7 +658,7 @@ class VivaBoardDistributionTest extends TestCase
         $this->assertSame('Ministry of Education', $payload['boards'][0]['ministry']);
     }
 
-    public function test_member_can_only_view_download_and_print_their_own_board_even_with_forged_ids(): void
+    public function test_member_can_view_and_download_only_own_board_even_with_forged_ids(): void
     {
         $member = $this->login(UserRole::Member);
         $other = User::factory()->create(['role' => 'member']);
@@ -668,40 +671,40 @@ class VivaBoardDistributionTest extends TestCase
         $forged = ['vdate' => '2026-11-10', 'user_id' => $other->id, 'board_id' => $theirs->id, 'assignment_id' => VivaAssignment::where('user_id', $other->id)->value('id')];
         $this->get(route('dashboard'))->assertOk()->assertSee('Viva Board Distribution');
         $this->get(route('viva.my-board.index', $forged))->assertOk()->assertSee('00000123')->assertSee('Unit 09')->assertDontSee('99999999')->assertDontSee('Distribution Summary')->assertDontSee('Candidate Import');
-        $this->get(route('viva.my-board.download', $forged + ['format' => 'print']))->assertOk()->assertSee('00000123')->assertDontSee('99999999');
-        $response = $this->get(route('viva.my-board.download', $forged + ['format' => 'xlsx']))->assertOk();
-        $path = $response->baseResponse->getFile()->getPathname();
-        $book = IOFactory::load($path);
-        $sheet = $book->getActiveSheet();
-        $this->assertSame('00000123', $sheet->getCell('G2')->getValue());
-        $this->assertSame('Unit 09', $sheet->getCell('D2')->getValue());
-        $this->assertSame(2, $sheet->getHighestRow());
-        $book->disconnectWorksheets();
-        unlink($path);
+        VivaSetting::findOrFail(1)->update(['candidate_downloads_enabled' => true]);
+        $this->get(route('viva.my-board.download', $forged + ['format' => 'print']))->assertSessionHasErrors('format');
+        $this->get(route('viva.my-board.download', $forged + ['format' => 'xlsx']))->assertSessionHasErrors('format');
+        $this->mock(CandidateReport::class)->shouldReceive('pdf')->once()->withArgs(function ($boards, $memberData) use ($member) {
+            $this->assertSame(['00000123'], $boards->first()->candidates->pluck('reg')->all());
+            $this->assertSame('Unit 09', $boards->first()->unit);
+            $this->assertSame($member->name, $memberData['name']);
+
+            return true;
+        })->andReturn('%PDF-own-board-test');
         $this->get(route('viva.my-board.download', $forged + ['format' => 'pdf']))->assertOk()->assertHeader('Content-Type', 'application/pdf');
         $this->get(route('viva.my-board.index', ['vdate' => '2026-11-11', 'user_id' => $other->id]))->assertOk()->assertSee('No board assigned')->assertDontSee('99999999');
-        $this->get(route('viva.my-board.download', ['vdate' => '2026-11-11', 'format' => 'xlsx']))->assertNotFound();
+        $this->get(route('viva.my-board.download', ['vdate' => '2026-11-11', 'format' => 'pdf']))->assertNotFound();
         foreach (['viva.boards.index', 'viva.report', 'viva.imports.index', 'viva.pools.index', 'viva.settings.edit'] as $route) {
             $this->get(route($route, $forged))->assertForbidden();
         }
-        $this->get(route('viva.my-board.download', ['vdate' => 'invalid', 'format' => 'xlsx']))->assertSessionHasErrors('vdate');
+        $this->get(route('viva.my-board.download', ['vdate' => 'invalid', 'format' => 'pdf']))->assertSessionHasErrors('vdate');
         $this->login(UserRole::Staff);
         $this->get(route('viva.my-board.index'))->assertForbidden();
         $this->get(route('viva.my-board.download', ['vdate' => '2026-11-10', 'format' => 'pdf']))->assertForbidden();
     }
 
-    public function test_my_board_print_includes_all_candidates_beyond_screen_pagination_and_pdf_has_multiple_pages(): void
+    public function test_member_pdf_contains_all_candidates_beyond_screen_pagination(): void
     {
         $member = $this->login(UserRole::Member);
         $board = $this->board(regs: array_map(fn ($i) => str_pad((string) $i, 8, '0', STR_PAD_LEFT), range(1, 110)));
         VivaAssignment::create(['vdate' => '2026-11-10', 'viva_board_id' => $board->id, 'user_id' => $member->id, 'assigned_by' => $member->id, 'member_snapshot' => ['name' => $member->name], 'mode' => 'manual']);
         $this->get(route('viva.my-board.index', ['vdate' => '2026-11-10']))->assertOk()->assertSee('00000050')->assertDontSee('00000110');
         $this->get(route('viva.my-board.index', ['vdate' => '2026-11-10', 'page' => 3]))->assertOk()->assertSee('00000110');
-        $this->get(route('viva.my-board.download', ['vdate' => '2026-11-10', 'format' => 'print']))->assertOk()->assertSee('00000110');
+        VivaSetting::findOrFail(1)->update(['candidate_downloads_enabled' => true]);
         $response = $this->get(route('viva.my-board.download', ['vdate' => '2026-11-10', 'format' => 'pdf']))->assertOk();
         $this->assertStringStartsWith('%PDF-', $response->getContent());
         $pages = preg_match_all('~/Type\s*/Page\b~', $response->getContent());
-        $this->assertGreaterThan(1,$pages);
-        $this->assertLessThanOrEqual(8,$pages);
+        $this->assertGreaterThan(1, $pages);
+        $this->assertLessThanOrEqual(8, $pages);
     }
 }
