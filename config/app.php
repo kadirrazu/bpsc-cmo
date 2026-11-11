@@ -13,7 +13,10 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'BPSC CMO — Chairman Office'),
+    'name' => match ($name = env('APP_NAME')) {
+        null, '', 'BPSC CMO — Chairman Office', 'BPSC CMO - Chairman Office' => 'BPSC CMO — Chairman’s Office',
+        default => $name,
+    },
 
     /*
     |--------------------------------------------------------------------------

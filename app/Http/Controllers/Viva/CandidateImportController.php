@@ -225,7 +225,7 @@ class CandidateImportController extends Controller
                     $counts['previews_cancelled']++;
                 }
             }
-            app(Audit::class)->record('viva.candidates.scope-removed', ['vdate' => $data['vdate'], 'post_code' => $data['post_code'], 'deleted_rows' => $counts]);
+            app(Audit::class)->record('viva.candidates.scope-removed', ['vdate' => $data['vdate'], 'post_code' => $data['post_code'], 'board_ids' => $ids->all(), 'deleted_rows' => $counts]);
 
             return $counts;
         }, 3);

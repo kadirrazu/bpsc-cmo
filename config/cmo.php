@@ -1,2 +1,3 @@
 <?php
-return ['version'=>'0.8.5'];
+
+return ['version' => '0.10.1'];

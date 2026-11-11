@@ -1,6 +1,6 @@
 # bpsc-cmo
 
-**BPSC CMO — Chairman Office** is a modular Laravel application for Bangladesh Public Service Commission. It provides shared authentication, user and organizational management, role-based permissions and audit logging. Office workflows are implemented as separate modules accessed through the common Dashboard.
+**BPSC CMO — Chairman’s Office** is a modular Laravel application for Bangladesh Public Service Commission. It provides shared authentication, user and organizational management, role-based permissions and audit logging. Office workflows are implemented as separate modules accessed through the common Dashboard.
 
 ## System Requirements
 

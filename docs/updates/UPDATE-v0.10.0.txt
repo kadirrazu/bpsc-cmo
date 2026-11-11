@@ -1,0 +1,46 @@
+BPSC CMO v0.10.0 | Append-only Audit History
+
+INSTALL
+Apply to v0.9.11. Extract into the project root and replace matching files.
+Run in this order:
+    php artisan optimize:clear
+    php artisan migrate --force
+    php artisan cmo:audit-sync
+The database account running the migration needs permission to create triggers
+and alter audit_logs. The migration preserves existing audit records.
+
+AUDIT COVERAGE
+Administrator > Audit Logs shows the recorded user ID, name and role, IP,
+date/time, action, target and available change details. Filters include exact
+actor name, actor ID, request ID, channel, action, IP, date and target.
+User identity is captured at event time and survives an account rename or deletion.
+
+Web request and business events share a request ID. Request logs include named
+route, method, status and safe target IDs. Login attempts, permission denials,
+validation failures, shared Viva display requests, CRUD, board distribution,
+import stages and confirmations, report downloads and CMO maintenance are logged.
+Viva display and console actions are identified separately from named CMO users.
+Viva candidate change events use internal IDs and board/post/date context.
+Upload records include filename, size and upload status. Download records
+indicate that the server prepared a file. Credentials, raw request bodies and
+spreadsheet contents are excluded from request logs.
+
+STORAGE AND PROTECTION
+Each committed database event has a JSON copy under
+storage/app/private/audit/YYYY-MM-DD. Application timestamps use Asia/Dhaka.
+The storage volume needs hard link support to publish files atomically.
+Files already present are verified against the database and never overwritten.
+The sync command fills missing files and reports differences by audit ID.
+Use --after=ID to start after a known audit ID. If file publication fails,
+the database retains the event and the application reports the file error.
+Keep the audit directory private and include it in backups. Live display
+polls produce request events and should be included in storage planning.
+
+All application roles have zero edit/delete access to audit records.
+Database triggers block row updates and deletes, including SQL bypassing Eloquent.
+Use a separate, restricted database account for normal application operation.
+Keep DROP, ALTER and TRIGGER privileges with the maintenance account.
+MySQL reference for TRUNCATE and DROP privilege
+https://dev.mysql.com/doc/refman/8.4/en/truncate-table.html
+Database and filesystem administrators operate outside application role controls.
+The application audit covers actions taken through CMO.

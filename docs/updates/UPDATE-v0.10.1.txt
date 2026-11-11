@@ -1,0 +1,46 @@
+BPSC CMO v0.10.1 | Audit Display, Branding and Security Review
+
+INSTALL
+Apply after v0.10.0. Extract into the project root and replace matching files.
+Run php artisan optimize:clear. This patch includes compiled frontend assets.
+If you run the Vite development server, run npm ci --ignore-scripts before
+starting it again. No database migration or Composer install is required.
+
+AUDIT LOGS
+User shows the recorded name, user ID and role label in the same cell.
+Older entries missing a role show Not recorded. Guests, the shared Viva
+Display and console actions have separate labels.
+
+Subject identifies the affected record or the route, batch or task involved.
+New requests with a bound numeric record store that record's type and ID.
+Existing entries use available saved references. A general action with no
+target shows No specific subject. No existing audit rows are rewritten.
+
+BRANDING
+BPSC CMO — Chairman’s Office appears in the application and report branding.
+The two previous default APP_NAME spellings are recognized on upgrades.
+README changes are limited to the project name. Existing workbook IDs and
+file naming conventions remain compatible.
+
+SECURITY REVIEW
+Reviewed account/session checks, privileged routes, ownership of import
+previews and individual Viva board downloads, upload validation, audit
+access and sensitive downloads. Verified the existing regression tests
+for role restrictions, ownership, revoked sessions and audit immutability.
+
+Updated locked Vite from 8.1.5 to 8.3.8 and rebuilt frontend assets. The prior
+lockfile had advisories including a Windows development-server issue.
+https://github.com/advisories/GHSA-587h-7wmj-h5pm
+The updated npm lockfile audit and Composer lockfile audit reported no
+known advisories at review time.
+
+Deployment verification remains specific to the server. On WAMP, check that
+Apache serves public/ only and has no separate alias exposing the project
+directory. Keep APP_DEBUG=false and use Secure cookies for HTTPS deployments.
+User transfer exports that explicitly include password hashes are sensitive.
+Keep those exports restricted and dispose of the copies after use.
+https://laravel.com/framework/docs/deployment
+
+VALIDATION
+Full Laravel suite passed with 212 tests and 2,310 assertions.
+Node slide suite passed with 3 tests. Vite production build passed.

@@ -2,7 +2,7 @@
     "$schema": "https://getcomposer.org/schema.json",
     "name": "bpsc/cmo",
     "type": "project",
-    "description": "BPSC Chairman Office modular application with audited role-based access.",
+    "description": "BPSC CMO — Chairman’s Office modular application with audited role-based access.",
     "keywords": [
         "laravel",
         "framework"

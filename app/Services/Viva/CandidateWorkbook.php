@@ -194,7 +194,8 @@ class CandidateWorkbook
             VivaCandidate::updateOrCreate(['vdate' => $item['date'], 'post_code' => $item['post_code'], 'reg' => $item['reg']], ['viva_board_id' => $board->id, 'name' => $item['name'] ?: null]);
         }
         // Moving candidates before assignment may leave an empty group; remove it.
-        VivaBoard::whereIn('vdate', $plan['dates'])->whereDoesntHave('candidates')->whereDoesntHave('assignment')->delete();
+        VivaBoard::whereIn('vdate', $plan['dates'])->whereDoesntHave('candidates')->whereDoesntHave('assignment')
+            ->eachById(fn (VivaBoard $board) => $board->delete());
     }
 
     private function fail(string $message): never

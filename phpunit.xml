@@ -16,6 +16,7 @@
     </source>
     <php>
         <env name="APP_ENV" value="testing"/>
+        <env name="AUDIT_FILES_ENABLED" value="false" force="true"/>
         <!-- Test requests use root-relative routes; never inherit a WAMP subdirectory URL. -->
         <env name="APP_URL" value="http://localhost" force="true"/>
         <server name="APP_URL" value="http://localhost" force="true"/>

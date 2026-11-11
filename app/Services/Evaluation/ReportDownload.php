@@ -83,7 +83,7 @@ class ReportDownload
     {
         $book = new Spreadsheet;
         $book->removeSheetByIndex(0);
-        $overview = [['BPSC CMO — Expert Evaluation System', 'Expert Evaluation Report'], ['Generated', $data['generated']]];
+        $overview = [[config('app.name'), 'Expert Evaluation Report'], ['Generated', $data['generated']]];
         foreach ($data['filters'] as $label => $value) {
             $overview[] = [$label, $value];
         }
@@ -172,7 +172,7 @@ class ReportDownload
         ]);
         $pdf->SetTitle('Expert Evaluation Report');
         $pdf->SetAuthor('Bangladesh Public Service Commission');
-        $pdf->DefHTMLHeaderByName('reportheader', '<div style="font-size:10pt;color:#176d62;border-bottom:1px solid #d4e1dc;padding-bottom:5px">Bangladesh Public Service Commission (BPSC) | Chairman Office</div>');
+        $pdf->DefHTMLHeaderByName('reportheader', '<div style="font-size:10pt;color:#176d62;border-bottom:1px solid #d4e1dc;padding-bottom:5px">'.e(config('app.name')).'</div>');
         $pdf->DefHTMLFooterByName('reportfooter', '<table width="100%" style="font-family:dejavusans;font-size:8pt;color:#677b71;border-top:1px solid #d4e1dc"><tr><td style="border:0;text-align:left">IT Section, BPSC</td><td style="border:0;text-align:right">Page {PAGENO} of {nbpg}</td></tr></table>');
         $pdf->WriteHTML(view('reports.pdf', $data)->render());
         $pdf->Output($path, Destination::FILE);

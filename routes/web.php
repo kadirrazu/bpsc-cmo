@@ -9,7 +9,6 @@ use App\Http\Controllers\UnitController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\Viva\DisplayController;
 use App\Http\Middleware\ActiveStaffAccount;
-use App\Http\Middleware\AuditActivity;
 use App\Http\Middleware\VivaDisplayAccess;
 use Illuminate\Support\Facades\Route;
 
@@ -40,7 +39,7 @@ Route::middleware('auth')->group(function () {
     require __DIR__.'/modules/viva.php';
 });
 
-Route::prefix('viva-board-display')->name('viva.display.')->withoutMiddleware([ActiveStaffAccount::class, AuditActivity::class])->controller(DisplayController::class)->group(function () {
+Route::prefix('viva-board-display')->name('viva.display.')->withoutMiddleware([ActiveStaffAccount::class])->controller(DisplayController::class)->group(function () {
     Route::get('/login', 'loginForm')->name('login');
     Route::post('/login', 'login')->middleware('throttle:5,1')->name('sign-in');
     Route::middleware(VivaDisplayAccess::class)->group(function () {

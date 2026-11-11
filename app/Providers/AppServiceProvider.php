@@ -3,21 +3,27 @@
 namespace App\Providers;
 
 use App\Enums\UserRole;
+use App\Http\Middleware\AuditActivity;
 use App\Models\Designation;
 use App\Models\Expert;
 use App\Models\Question;
 use App\Models\Survey;
 use App\Models\Unit;
 use App\Models\User;
+use App\Models\VivaBoard;
+use App\Models\VivaCandidate;
 use App\Models\VivaSetting;
 use App\Observers\LibraryObserver;
 use App\Services\Library\Audit;
 use Illuminate\Auth\Events\Failed;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
+use Illuminate\Console\Events\CommandFinished;
+use Illuminate\Foundation\Http\Events\RequestHandled;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
@@ -56,12 +62,31 @@ class AppServiceProvider extends ServiceProvider
                 }
             });
         }
+        VivaBoard::observe(LibraryObserver::class);
+        VivaCandidate::observe(LibraryObserver::class);
         Event::listen(Login::class, function (Login $e) {
             $e->user->forceFill(['last_login_at' => now()])->save();
             request()->session()->put('auth_version', $e->user->auth_version);
-            app(Audit::class)->record('auth.login', actor: $e->user);
+            app(Audit::class)->record('auth.login', subject: $e->user, actor: $e->user);
         });
-        Event::listen(Logout::class, fn (Logout $e) => app(Audit::class)->record('auth.logout', actor: $e->user));
-        Event::listen(Failed::class, fn (Failed $e) => app(Audit::class)->record('auth.failed', actor: $e->user));
+        Event::listen(Logout::class, fn (Logout $e) => app(Audit::class)->record('auth.logout', subject: $e->user, actor: $e->user));
+        Event::listen(Failed::class, fn (Failed $e) => app(Audit::class)->record('auth.failed', subject: $e->user));
+        Event::listen(RequestHandled::class, function (RequestHandled $event) {
+            $status = $event->response->getStatusCode();
+            if ($event->request->attributes->get('audit_request_recorded') ||
+                ! in_array($status, [401, 403, 404, 405, 413, 419, 429], true)) {
+                return;
+            }
+            try {
+                app(AuditActivity::class)->record($event->request, $status, $event->response, $event->request->user());
+            } catch (\Throwable $exception) {
+                Log::error('Could not record an early request rejection.', ['exception' => $exception::class]);
+            }
+        });
+        Event::listen(CommandFinished::class, function (CommandFinished $event) {
+            if (str_starts_with((string) $event->command, 'cmo:') || $event->command === 'sanctum:prune-expired') {
+                app(Audit::class)->record('console.command.finished', ['command' => $event->command, 'exit_code' => $event->exitCode]);
+            }
+        });
     }
 }

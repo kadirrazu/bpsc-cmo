@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Viva Board Candidate Lists</title><style>@include('viva.reports.styles')</style></head><body>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Viva Board Candidate Lists | {{ config('app.name') }}</title><style>@include('viva.reports.styles')</style></head><body>
 @if(!$pdf)<div class="controls"><button type="button" data-print-report>Print Board Candidate Lists</button><span> {{ $boards->count() }} boards · A4 portrait · Each board starts on a new page.</span></div><script src="{{ Vite::asset('resources/js/app.js') }}" type="module"></script>@endif
 @foreach($boards as $board)
 @if($pdf && !$loop->first)<pagebreak />@endif

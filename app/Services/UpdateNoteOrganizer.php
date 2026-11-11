@@ -6,7 +6,7 @@ use RuntimeException;
 
 class UpdateNoteOrganizer
 {
-    public function organize(string $root): array
+    public function organize(string $root, ?callable $onChange = null): array
     {
         $root = realpath($root);
         if ($root === false || ! is_dir($root)) {
@@ -32,7 +32,9 @@ class UpdateNoteOrganizer
                 if (is_file($target) && ! is_link($target) && hash_file('sha256', $source) === hash_file('sha256', $target)) {
                     if (! unlink($source)) {
                         throw new RuntimeException('Could not remove a duplicate root update note.');
-                    }$result['deduplicated']++;
+                    }
+                    $result['deduplicated']++;
+                    $onChange && $onChange('file.update-note.duplicate-removed', ['file' => basename($source), 'retained' => 'docs/updates/'.basename($target)]);
 
                     continue;
                 }
@@ -44,7 +46,9 @@ class UpdateNoteOrganizer
             }
             if (! rename($source, $target)) {
                 throw new RuntimeException('Could not move an update note into docs/updates.');
-            }$result['moved']++;
+            }
+            $result['moved']++;
+            $onChange && $onChange('file.update-note.moved', ['from' => basename($source), 'to' => 'docs/updates/'.basename($target)]);
         }
 
         return $result;

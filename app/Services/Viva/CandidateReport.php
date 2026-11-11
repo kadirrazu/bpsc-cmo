@@ -30,7 +30,7 @@ class CandidateReport
         $pdf->WriteHTML(view('viva.reports.styles', ['pdf' => true])->render(), HTMLParserMode::HEADER_CSS);
         $pdf->SetHTMLFooter(view('viva.reports.footer')->render());
         foreach ($boards->values() as $index => $board) {
-            $header = '<div style="font-size:8.5pt;color:#58645c;margin-bottom:6px">Bangladesh Public Service Commission (BPSC) | Chairman Office</div>'
+            $header = '<div style="font-size:8.5pt;color:#58645c;margin-bottom:6px">'.e(config('app.name')).'</div>'
                 .view('viva.reports.board-heading', ['board' => $board, 'pdf' => true, 'member' => $membersByBoard[$board->id] ?? $member])->render();
             $pdf->SetHTMLHeader($header);
             if ($index > 0) {

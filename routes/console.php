@@ -6,6 +6,7 @@ use App\Models\DataImport;
 use App\Models\Designation;
 use App\Models\User;
 use App\Models\VivaImport;
+use App\Services\Library\Audit;
 use App\Services\Library\Catalog;
 use App\Services\UpdateNoteOrganizer;
 use Illuminate\Support\Facades\Artisan;
@@ -67,12 +68,18 @@ Artisan::command('cmo:create-admin', function () {
 Schedule::command('sanctum:prune-expired --hours=24')->daily();
 
 Artisan::command('cmo:organize-update-notes', function () {
-    $result = app(UpdateNoteOrganizer::class)->organize(base_path());
+    $result = app(UpdateNoteOrganizer::class)->organize(base_path(), app(Audit::class)->record(...));
     $this->info('Update notes organized in docs/updates: '.$result['moved'].' moved, '.$result['deduplicated'].' duplicate root copies removed, '.$result['skipped'].' skipped.');
 
     return 0;
 })->purpose('Move legacy root UPDATE-v*.txt files into docs/updates without overwriting different content');
 
-Schedule::call(fn () => DataImport::where('expires_at', '<', now())->delete())->daily()->name('cmo:prune-imports');
-
-Schedule::call(fn () => VivaImport::where('expires_at', '<', now())->delete())->daily()->name('cmo:prune-viva-imports');
+foreach (['cmo:prune-imports' => DataImport::class, 'cmo:prune-viva-imports' => VivaImport::class] as $name => $model) {
+    Schedule::call(function () use ($name, $model) {
+        DB::transaction(function () use ($name, $model) {
+            $cutoff = now();
+            $count = $model::where('expires_at', '<', $cutoff)->delete();
+            app(Audit::class)->record('console.imports.pruned', ['task' => $name, 'cutoff' => $cutoff->toIso8601String(), 'deleted_rows' => $count]);
+        });
+    })->daily()->name($name);
+}

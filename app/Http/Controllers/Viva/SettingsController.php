@@ -36,8 +36,9 @@ class SettingsController extends Controller
         $data = $request->validate(['start_time' => 'required|date_format:H:i']);
         DB::transaction(function () use ($data) {
             $settings = VivaSetting::whereKey(1)->lockForUpdate()->firstOrFail();
+            $before = $settings->start_time;
             $settings->update($data);
-            app(Audit::class)->record('viva.timing.updated', $data);
+            app(Audit::class)->record('viva.timing.updated', $data + ['previous_start_time' => $before]);
         });
 
         return back()->with('success', 'Distribution opening time saved.');
@@ -69,11 +70,12 @@ class SettingsController extends Controller
             if (empty($d['display_password'])) {
                 unset($d['display_password']);
             }
+            $before = $settings->only(['start_time', 'display_username']);
             $settings->fill($d);
             if ($changed) {
                 $settings->auth_version++;
             } $settings->save();
-            app(Audit::class)->record('viva.settings.updated', ['start_time' => $settings->start_time, 'display_username' => $settings->display_username, 'credentials_changed' => $changed]);
+            app(Audit::class)->record('viva.settings.updated', ['start_time' => $settings->start_time, 'display_username' => $settings->display_username, 'credentials_changed' => $changed, 'before' => $before]);
         });
 
         return back()->with('success', 'Viva settings saved. Changed display credentials revoke existing display sessions.');
